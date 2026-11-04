@@ -25,11 +25,11 @@ export default function AppSidebar() {
               href="/"
               className={cn(
                 buttonVariants({ variant: "ghost" }),
-                "font-bold text-2xl px-6 gap-2 justify-start min-h-fit hover:bg-transparent"
+                "font-bold text-xl px-4 gap-2 justify-start min-h-fit hover:bg-transparent"
               )}
             >
               <FaBagShopping className="size-6 text-primary mb-1 flex-shrink-0" />
-              <Typography component="span">Zorvex</Typography>
+              <Typography component="span">HR Acessórios</Typography>
             </Link>
 
             <ul className="pt-6 flex flex-col gap-y-2">
@@ -59,7 +59,7 @@ export default function AppSidebar() {
                 className="w-full py-3 text-base whitespace-nowrap"
               >
                 <LogOut className="size-6 mr-3 flex-shrink-0" />
-                Log out
+                Sair
               </Button>
             </form>
           </div>

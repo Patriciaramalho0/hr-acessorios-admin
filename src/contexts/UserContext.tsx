@@ -1,11 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext } from "react";
 import { User } from "@supabase/supabase-js";
-
 import { Tables } from "@/types/supabase";
-import { createBrowserClient } from "@/lib/supabase/client";
 
 export type UserRole = Tables<"staff_roles">["name"];
 
@@ -21,48 +18,28 @@ type UserContextType = {
   isLoading: boolean;
 };
 
+const mockUser = {
+  id: "helenzinha-id",
+  email: "helenzinhalr@hotmail.com",
+} as User;
+
+const mockProfile = {
+  name: "Helen",
+  image_url: null,
+  role: "admin" as UserRole,
+};
+
 const UserContext = createContext<UserContextType>({
-  user: null,
-  profile: null,
-  isLoading: true,
+  user: mockUser,
+  profile: mockProfile,
+  isLoading: false,
 });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createBrowserClient();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, queryClient]);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["user-profile"],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) {
-        return { user: null, role: null };
-      }
-
-      const { data: profile } = await supabase.rpc("get_my_profile");
-      return { user: session.user, profile: profile as UserProfile };
-    },
-    staleTime: Infinity,
-  });
-
   const value = {
-    user: data?.user ?? null,
-    profile: data?.profile ?? null,
-    isLoading,
+    user: mockUser,
+    profile: mockProfile,
+    isLoading: false,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

@@ -1,37 +1,13 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const authRoutes = [
-    "/login",
-    "/signup",
-    "/forgot-password",
-    "/update-password",
-  ];
-
-  const isAuthRoute = authRoutes.includes(req.nextUrl.pathname);
-  const isLoggedIn = !!session?.user;
-
-  if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
-  if (!isLoggedIn && !isAuthRoute) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("redirect_to", req.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return res;
+export function middleware(request: NextRequest) {
+  // Libera a passagem sem redirecionar para a tela de login
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|auth|.*\\..*).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

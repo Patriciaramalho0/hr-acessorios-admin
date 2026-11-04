@@ -14,7 +14,10 @@ type Props = {
 };
 
 export default function AuthProviders({ authType = "Login" }: Props) {
-  const supabase = createClientComponentClient();
+  const supabase = createClientComponentClient({
+    supabaseUrl: "https://glatszezwrvxiktwqjwg.supabase.co",
+    supabaseKey: "sb_publishable_kv907qxnbA4i67Tb60oZLQ_iBDs02ki"
+  });
 
   // Handle authentication with OAuth providers.
   const handleAuth = (authProvider: AuthProvider) => {
