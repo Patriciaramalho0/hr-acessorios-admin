@@ -2,6 +2,7 @@
 import { Pagination } from "@/types/pagination";
 
 export type SBCategory = {
+  image_url: string | null;
   published: boolean;
   id: string;
   name: string;

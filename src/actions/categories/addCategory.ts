@@ -7,6 +7,7 @@ import { createServerActionClient } from "@/lib/supabase/server-action";
 import { categoryFormSchema } from "@/app/(dashboard)/categories/_components/form/schema";
 import { formatValidationErrors } from "@/helpers/formatValidationErrors";
 import { CategoryServerActionResponse } from "@/types/server-action";
+import { prepareCategoryCover } from "@/lib/category-cover";
 
 export async function addCategory(
   formData: FormData
@@ -14,6 +15,7 @@ export async function addCategory(
   const parsedData = categoryFormSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
+    image: formData.get("image") ?? undefined,
   });
 
   if (!parsedData.success) {
@@ -31,6 +33,12 @@ export async function addCategory(
   const categoryId = parsedData.data.slug;
 
   const db = supabase as any;
+  let imageUrl: string | null | undefined;
+  try {
+    imageUrl = await prepareCategoryCover(supabase, parsedData.data.image, formData.get("remove_image") === "true");
+  } catch (error) {
+    return { dbError: error instanceof Error ? error.message : "Não foi possível enviar a capa." };
+  }
 
   const { data: newCategory, error } = await db
     .from("categories")
@@ -38,6 +46,7 @@ export async function addCategory(
       id: categoryId,
       name: parsedData.data.name,
       slug: parsedData.data.slug,
+      image_url: imageUrl ?? null,
     })
     .select("*")
     .single();

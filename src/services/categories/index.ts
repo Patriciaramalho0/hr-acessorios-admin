@@ -18,7 +18,7 @@ export async function fetchCategories(
 
   let query = db
     .from("categories")
-    .select("id, name, slug, created_at, published", { count: "exact" });
+    .select("id, name, slug, created_at, published, image_url", { count: "exact" });
 
   if (search) {
     query = query.ilike("name", `%${search}%`);

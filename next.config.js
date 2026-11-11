@@ -3,6 +3,9 @@ const { WindowsBuildFilesystemPlugin } = require("./scripts/windows-build-filesy
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   webpack(config) {
     if (process.platform === "win32") config.plugins.push(new WindowsBuildFilesystemPlugin());
     return config;

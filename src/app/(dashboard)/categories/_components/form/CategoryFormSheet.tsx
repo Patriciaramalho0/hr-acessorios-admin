@@ -32,6 +32,7 @@ import { FormSubmitButton } from "@/components/shared/form/FormSubmitButton";
 import { categoryFormSchema, CategoryFormData } from "./schema";
 import { objectToFormData } from "@/helpers/objectToFormData";
 import { CategoryServerActionResponse } from "@/types/server-action";
+import CategoryCoverInput from "./CategoryCoverInput";
 
 type Props = {
   title: string;
@@ -77,6 +78,7 @@ export default function CategoryFormSheet({
 
   const onSubmit = (data: CategoryFormData) => {
     const formData = objectToFormData(data);
+    if (data.image === null) formData.set("remove_image", "true");
 
     startTransition(async () => {
       try {
@@ -143,6 +145,7 @@ export default function CategoryFormSheet({
 
               <FormSheetBody>
                 <div className="space-y-6">
+                  <CategoryCoverInput control={form.control} />
                   <FormTextInput
                     control={form.control}
                     name="name"

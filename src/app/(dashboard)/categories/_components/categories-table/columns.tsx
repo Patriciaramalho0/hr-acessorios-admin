@@ -56,7 +56,10 @@ export const getColumns = ({
       accessorKey: "name",
       header: "Categoria",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.name.trim()}</span>
+        <span className="flex items-center gap-3 font-medium">
+          {row.original.image_url && <img src={row.original.image_url} alt={`Capa de ${row.original.name.trim()}`} className="h-10 w-10 rounded-full object-cover" />}
+          {row.original.name.trim()}
+        </span>
       ),
     },
     {
@@ -91,12 +94,13 @@ export const getColumns = ({
             <CategoryFormSheet
               key={row.original.id}
               title="Editar categoria"
-              description="Altere o nome ou identificador da categoria."
+              description="Altere o nome, identificador ou imagem de capa da categoria."
               submitButtonText="Salvar alterações"
               actionVerb="atualizada"
               initialData={{
                 name: row.original.name.trim(),
                 slug: row.original.slug ?? "",
+                image: row.original.image_url ?? undefined,
               }}
               action={(formData) => editCategory(row.original.id, formData)}
             >
