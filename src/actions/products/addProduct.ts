@@ -18,6 +18,7 @@ export async function addProduct(
 
   const parsedData = productFormSchema.safeParse({
     name: formData.get("name"),
+    description: formData.get("description") ?? "",
     image: imageValue || undefined,
     category: formData.get("category"),
     price: formData.get("price"),
@@ -61,6 +62,8 @@ export async function addProduct(
     .from("products")
     .insert({
       name: productData.name,
+      description: productData.description || null,
+      published: false,
       price: productData.price,
       old_price:
         productData.oldPrice != null && productData.oldPrice > 0

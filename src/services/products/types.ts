@@ -4,6 +4,7 @@ import { Pagination } from "@/types/pagination";
 export type ProductStatus = "selling" | "out-of-stock";
 
 export type SBProduct = {
+  description: string | null;
   published: boolean;
   id: string;
   name: string;

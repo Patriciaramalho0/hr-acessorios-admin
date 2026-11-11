@@ -30,6 +30,7 @@ export async function fetchProducts(
       `
         id,
         name,
+        description,
         price,
         old_price,
         image_url,
@@ -92,6 +93,7 @@ export async function fetchProductDetails(
       `
         id,
         name,
+        description,
         price,
         old_price,
         image_url,

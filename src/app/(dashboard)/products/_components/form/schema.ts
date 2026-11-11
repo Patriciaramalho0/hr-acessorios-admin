@@ -11,6 +11,7 @@ const ACCEPTED_IMAGE_TYPES = [
 ];
 
 export const productFormSchema = z.object({
+  description: z.string().trim().max(5000, "A descrição deve ter até 5.000 caracteres.").default(""),
   name: z
     .string()
     .min(1, "Informe o nome do produto.")

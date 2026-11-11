@@ -45,6 +45,7 @@ export async function addCategory(
     .insert({
       id: categoryId,
       name: parsedData.data.name,
+      published: false,
       slug: parsedData.data.slug,
       image_url: imageUrl ?? null,
     })

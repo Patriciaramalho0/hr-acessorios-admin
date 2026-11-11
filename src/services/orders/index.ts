@@ -53,6 +53,7 @@ function normalizeOrder(row: any): Order {
   return {
     id: String(row.id),
     checkout: typeof row.items === "object" && row.items !== null && !Array.isArray(row.items) ? row.items.checkout : undefined,
+    inventory: typeof row.items === "object" && row.items !== null && !Array.isArray(row.items) ? row.items.inventory : undefined,
     customer_name: String(row.customer_name ?? "Cliente não informado"),
     customer_phone: String(row.customer_phone ?? ""),
     items: normalizeItems(row.items),

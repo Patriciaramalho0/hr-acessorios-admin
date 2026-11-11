@@ -171,6 +171,7 @@ export const getColumns = ({
               actionVerb="atualizado"
               initialData={{
                 name: row.original.name,
+                description: row.original.description ?? "",
                 image: row.original.image_url ?? undefined,
                 category: row.original.category_id ?? "",
                 price: row.original.price,
@@ -181,6 +182,7 @@ export const getColumns = ({
                 editProduct(row.original.id, formData)
               }
               previewImage={row.original.image_url ?? ""}
+              originalStock={row.original.stock}
             >
               <SheetTooltip content="Editar produto">
                 <PenSquare className="size-5" />

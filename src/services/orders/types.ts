@@ -10,6 +10,7 @@ export interface OrderItem {
 }
 
 export interface SBOrder {
+  inventory?: { state?: "deducted" | "restored" };
   checkout?: { event?: string; note?: string; source?: string; whatsapp_consent?: boolean; whatsapp_consent_at?: string | null };
   id: string;
   customer_name: string;

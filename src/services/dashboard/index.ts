@@ -117,7 +117,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       return empty;
     }
 
-    const orders = rows ?? [];
+    const orders = (rows ?? []).filter((row: any) => row.items?.checkout?.test_mode !== true);
     const now = new Date();
 
     const today = getLocalDate(now);

@@ -25,6 +25,7 @@ export function EditProductSheet({ product, children }: Props) {
       actionVerb="atualizado"
       initialData={{
         name: product.name,
+        description: product.description ?? "",
         image: product.image_url ?? undefined,
         category: product.category_id ?? "",
         price: product.price,
@@ -35,6 +36,7 @@ export function EditProductSheet({ product, children }: Props) {
         editProduct(product.id, formData)
       }
       previewImage={product.image_url ?? ""}
+      originalStock={product.stock}
     >
       <SheetTrigger asChild>{children}</SheetTrigger>
     </ProductFormSheet>

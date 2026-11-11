@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { fetchOrderDetails } from "@/services/orders";
 import { createServerClient } from "@/lib/supabase/server";
 import { InvoiceActions } from "./_components/InvoiceActions";
+import { ReturnStockButton } from "./_components/ReturnStockButton";
 
 type PageParams = {
   params: { id: string };
@@ -90,6 +91,9 @@ export default async function Order({ params: { id } }: PageParams) {
           </div>
 
           <Separator className="my-6" />
+          {order.inventory?.state === "deducted" && <p className="mb-3 text-sm">Itens descontados do estoque na confirmação deste pedido.</p>}
+          {order.inventory?.state === "restored" && <p className="mb-3 text-sm">Itens devolvidos ao estoque.</p>}
+          {order.payment_status === "cancelado" && order.inventory?.state === "deducted" && <ReturnStockButton orderId={order.id} />}
 
           {order.checkout && <div className="mb-6 space-y-1 text-sm">
             <p>Etapa: {order.payment_status === "pago" ? "Compra confirmada" : order.checkout.event === "whatsapp_redirected" ? "Redirecionamento ao WhatsApp iniciado" : "Checkout iniciado"}</p>

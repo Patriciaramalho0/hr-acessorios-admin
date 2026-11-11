@@ -19,6 +19,7 @@ export async function editProduct(
 
   const parsedData = productFormSchema.safeParse({
     name: formData.get("name"),
+    description: formData.get("description") ?? "",
     image: imageValue || undefined,
     category: formData.get("category"),
     price: formData.get("price"),
@@ -58,10 +59,11 @@ export async function editProduct(
     imageUrl = publicUrlData.publicUrl;
   }
 
-  const { data: updatedProduct, error: dbError } = await db
+  let update = db
     .from("products")
     .update({
       name: productData.name,
+      ...(formData.has("description") ? { description: productData.description || null } : {}),
       price: productData.price,
       old_price:
         productData.oldPrice != null && productData.oldPrice > 0
@@ -71,14 +73,18 @@ export async function editProduct(
       category_id: productData.category,
       ...(imageUrl ? { image_url: imageUrl } : {}),
     })
-    .eq("id", productId)
+    .eq("id", productId);
+  const originalStock = formData.get("original_stock");
+  if (originalStock === "null") update = update.is("stock", null);
+  else if (originalStock !== null && /^\d+$/.test(String(originalStock))) update = update.eq("stock", Number(originalStock));
+  const { data: updatedProduct, error: dbError } = await update
     .select()
     .single();
 
-  if (dbError) {
+  if (dbError || !updatedProduct) {
     console.error("Erro ao atualizar produto:", dbError);
     return {
-      dbError: "Não foi possÃ­vel atualizar o produto. Tente novamente.",
+      dbError: dbError?.code === "PGRST116" ? "O estoque mudou enquanto você editava. Recarregue o produto e confira a quantidade antes de salvar." : "Não foi possível atualizar o produto. Tente novamente.",
     };
   }
 

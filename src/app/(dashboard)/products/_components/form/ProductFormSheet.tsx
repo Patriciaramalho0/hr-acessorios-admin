@@ -33,6 +33,7 @@ import {
   FormCategoryInput,
   FormImageInput,
   FormPriceInput,
+  FormTextarea,
 } from "@/components/shared/form";
 
 import { FormSubmitButton } from "@/components/shared/form/FormSubmitButton";
@@ -53,11 +54,13 @@ type BaseProductFormProps = {
 type AddProductFormProps = BaseProductFormProps & {
   initialData?: never;
   previewImage?: never;
+  originalStock?: never;
 };
 
 type EditProductFormProps = BaseProductFormProps & {
   initialData: Partial<ProductFormData>;
   previewImage: string;
+  originalStock?: number | null;
 };
 
 type ProductFormProps = AddProductFormProps | EditProductFormProps;
@@ -69,6 +72,7 @@ export default function ProductFormSheet({
   actionVerb,
   initialData,
   previewImage,
+  originalStock,
   children,
   action,
 }: ProductFormProps) {
@@ -85,6 +89,7 @@ export default function ProductFormSheet({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
+      description: "",
       image: undefined,
       category: "",
       price: 0,
@@ -100,6 +105,7 @@ export default function ProductFormSheet({
 
   const onSubmit = (data: ProductFormData) => {
     const formData = objectToFormData(data);
+    if (initialData) formData.set("original_stock", originalStock === null ? "null" : String(originalStock ?? initialData.stock ?? 0));
 
     startTransition(async () => {
       try {
@@ -181,6 +187,8 @@ export default function ProductFormSheet({
                     label="Nome do produto"
                     placeholder="Digite o nome do produto"
                   />
+
+                  <FormTextarea control={form.control} name="description" label="Descrição" placeholder="Material, tamanho e cuidados com a peça" />
 
                   <FormImageInput
                     control={form.control}

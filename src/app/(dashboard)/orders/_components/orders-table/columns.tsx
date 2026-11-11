@@ -119,7 +119,7 @@ export const getColumns = ({
   if (hasPermission("orders", "canChangeStatus")) {
     columns.splice(5, 0, {
       header: "Atualizar pagamento",
-      cell: ({ row }) => (
+      cell: ({ row }) => row.original.payment_method === "mercadopago" ? <span className="text-xs text-muted-foreground">Atualizado pelo provedor</span> : (
         <TableSelect
           value={row.original.payment_status || "pendente"}
           toastSuccessMessage="Status do pagamento atualizado."
