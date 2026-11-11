@@ -1,20 +1,11 @@
-import { type PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
-import { Database } from "@/types/supabase";
 import { Pagination } from "@/types/pagination";
 
-type PublicSchema = Database["public"];
-type PublicTables = PublicSchema["Tables"];
-
-type Props<TableData, TableName extends keyof PublicTables> = {
+type Props<TableData, TableName extends PropertyKey = string> = {
   page: number;
   limit: number;
-  name: keyof PublicTables;
-  query: PostgrestFilterBuilder<
-    PublicSchema,
-    PublicTables[TableName]["Row"],
-    TableData[]
-  >;
+  name: TableName;
+  query: any;
 };
 
 type Response<TableData> = {
@@ -24,7 +15,7 @@ type Response<TableData> = {
 
 export async function queryPaginatedTable<
   TableData,
-  TableName extends keyof PublicTables
+  TableName extends PropertyKey = string
 >({
   page,
   limit,
@@ -33,30 +24,31 @@ export async function queryPaginatedTable<
 }: Props<TableData, TableName>): Promise<Response<TableData>> {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
-  const limitQuery = query.range(from, to);
 
-  const { data, error, count } = await limitQuery;
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
-    console.error(`Error fetching ${name}:`, error.message);
-    throw new Error(`Error fetching from table '${name}': ${error.message}`);
+    console.error(`Erro ao buscar ${String(name)}:`, error.message);
+    throw new Error(
+      `Erro ao consultar a tabela '${String(name)}': ${error.message}`
+    );
   }
 
   const totalItems = count ?? 0;
   const totalPages = Math.ceil(totalItems / limit);
-  const currentPage = Math.max(1, Math.min(page, totalPages));
-  const nextPage = currentPage < totalPages ? currentPage + 1 : null;
-  const prevPage = currentPage > 1 ? currentPage - 1 : null;
+
+  const currentPage =
+    totalPages === 0 ? 1 : Math.max(1, Math.min(page, totalPages));
 
   return {
-    data: data,
+    data: (data ?? []) as TableData[],
     pagination: {
       limit,
       current: currentPage,
       items: totalItems,
       pages: totalPages,
-      next: nextPage,
-      prev: prevPage,
+      next: currentPage < totalPages ? currentPage + 1 : null,
+      prev: currentPage > 1 ? currentPage - 1 : null,
     },
   };
 }

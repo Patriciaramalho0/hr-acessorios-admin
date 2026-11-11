@@ -1,10 +1,14 @@
-import { Database } from "@/types/supabase";
+
 import { Pagination } from "@/types/pagination";
 import { SBOrder } from "../orders/types";
 
-export type SBCustomer = Database["public"]["Tables"]["customers"]["Row"];
-
-export type Customer = SBCustomer;
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  created_at: string;
+}
 
 export interface FetchCustomersParams {
   page?: number;
@@ -20,11 +24,10 @@ export interface FetchCustomersResponse {
 export type CustomerOrder = Pick<
   SBOrder,
   | "id"
-  | "invoice_no"
-  | "order_time"
+  | "customer_name"
+  | "customer_phone"
+  | "created_at"
   | "payment_method"
   | "total_amount"
-  | "status"
-> & {
-  customers: Pick<SBCustomer, "name" | "address" | "phone">;
-};
+  | "payment_status"
+>;

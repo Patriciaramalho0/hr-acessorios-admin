@@ -1,18 +1,13 @@
+
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 
-import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { SelectItem } from "@/components/ui/select";
 import { formatAmount } from "@/helpers/formatAmount";
 
 import Typography from "@/components/ui/typography";
-import { TableSelect } from "@/components/shared/table/TableSelect";
 import { OrderBadgeVariants } from "@/constants/badge";
-import { OrderStatus } from "@/services/orders/types";
 import { CustomerOrder } from "@/services/customers/types";
-
-import { changeOrderStatus } from "@/actions/orders/changeOrderStatus";
 import { HasPermission } from "@/hooks/use-authorization";
 
 export const getColumns = ({
@@ -22,51 +17,50 @@ export const getColumns = ({
 }) => {
   const columns: ColumnDef<CustomerOrder>[] = [
     {
-      header: "invoice no",
-      cell: ({ row }) => row.original.invoice_no,
+      header: "Pedido",
+      cell: ({ row }) => `#${row.original.id.slice(0, 8)}`,
     },
     {
-      header: "order time",
+      header: "Cliente",
+      cell: ({ row }) => row.original.customer_name,
+    },
+    {
+      header: "Data do pedido",
       cell: ({ row }) =>
-        `${format(row.original.order_time, "PP")} ${format(
-          row.original.order_time,
-          "p"
-        )}`,
+        format(new Date(row.original.created_at), "dd/MM/yyyy HH:mm"),
     },
     {
-      header: "shipping address",
+      header: "Telefone",
       cell: ({ row }) => (
-        <span className="block max-w-72 truncate">
-          {row.original.customers?.address}
-        </span>
-      ),
-    },
-    {
-      header: "phone",
-      cell: ({ row }) => (
-        <Typography className={cn(!row.original.customers.phone && "pl-6")}>
-          {row.original.customers.phone || "—"}
+        <Typography>
+          {row.original.customer_phone || "—"}
         </Typography>
       ),
     },
     {
-      header: "method",
+      header: "Pagamento",
       cell: ({ row }) => (
-        <span className="capitalize">{row.original.payment_method}</span>
+        <span className="capitalize">
+          {row.original.payment_method || "Não informado"}
+        </span>
       ),
     },
     {
-      header: "amount",
+      header: "Valor",
       cell: ({ row }) => formatAmount(row.original.total_amount),
     },
     {
-      header: "status",
+      header: "Status",
       cell: ({ row }) => {
-        const status = row.original.status;
+        const status = row.original.payment_status || "pendente";
 
         return (
           <Badge
-            variant={OrderBadgeVariants[status]}
+            variant={
+              OrderBadgeVariants[
+                status as keyof typeof OrderBadgeVariants
+              ] ?? "secondary"
+            }
             className="flex-shrink-0 text-xs capitalize"
           >
             {status}
@@ -75,30 +69,6 @@ export const getColumns = ({
       },
     },
   ];
-
-  if (hasPermission("orders", "canChangeStatus"))
-    [
-      columns.push({
-        header: "action",
-        cell: ({ row }) => {
-          return (
-            <TableSelect
-              value={row.original.status}
-              toastSuccessMessage="Order status updated successfully."
-              queryKey="orders"
-              onValueChange={(value) =>
-                changeOrderStatus(row.original.id, value as OrderStatus)
-              }
-            >
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </TableSelect>
-          );
-        },
-      }),
-    ];
 
   return columns;
 };

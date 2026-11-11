@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef, LegacyRef, useState, useTransition, useEffect } from "react";
@@ -48,7 +49,7 @@ type AddCouponFormProps = BaseCouponFormProps & {
 
 type EditCouponFormProps = BaseCouponFormProps & {
   initialData: Partial<CouponFormData>;
-  previewImage: string;
+  previewImage?: string;
 };
 
 type CouponFormProps = AddCouponFormProps | EditCouponFormProps;
@@ -66,7 +67,7 @@ export default function CouponFormSheet({
   const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [container, setContainer] = useState(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const imageDropzoneRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<CouponFormData>({
@@ -84,7 +85,16 @@ export default function CouponFormSheet({
   });
 
   useEffect(() => {
-    form.reset(initialData);
+    form.reset({
+      name: "",
+      code: "",
+      image: undefined,
+      startDate: new Date(),
+      endDate: new Date(),
+      isPercentageDiscount: true,
+      discountValue: 0,
+      ...initialData,
+    });
   }, [form, initialData]);
 
   const onSubmit = (data: CouponFormData) => {

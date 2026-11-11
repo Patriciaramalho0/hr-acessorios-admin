@@ -1,3 +1,4 @@
+
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { IoBagHandle } from "react-icons/io5";
@@ -20,41 +21,47 @@ export async function generateMetadata({
   params: { id },
 }: PageParams): Promise<Metadata> {
   try {
-    const { customerOrders } = await fetchCustomerOrders(createServerClient(), {
-      id,
-    });
+    const { customerOrders } = await fetchCustomerOrders(
+      createServerClient(),
+      { id }
+    );
 
     if (customerOrders.length === 0) {
-      return { title: "No customer orders" };
+      return { title: "Pedidos do cliente" };
     }
 
-    return { title: customerOrders[0].customers.name };
-  } catch (e) {
-    return { title: "Customer not found" };
+    return {
+      title: customerOrders[0].customer_name || "Pedidos do cliente",
+    };
+  } catch {
+    return { title: "Cliente não encontrado" };
   }
 }
 
-export default async function CustomerOrders({ params: { id } }: PageParams) {
+export default async function CustomerOrders({
+  params: { id },
+}: PageParams) {
   try {
-    const { customerOrders } = await fetchCustomerOrders(createServerClient(), {
-      id,
-    });
+    const { customerOrders } = await fetchCustomerOrders(
+      createServerClient(),
+      { id }
+    );
 
     return (
       <section>
-        <PageTitle>Customer Order List</PageTitle>
+        <PageTitle>Pedidos do cliente</PageTitle>
 
         {customerOrders.length === 0 ? (
-          <Card className="w-full flex flex-col text-center items-center py-8">
-            <IoBagHandle className="text-red-500 size-20 mb-4" />
-            <Typography>This customer has no order yet!</Typography>
+          <Card className="flex w-full flex-col items-center py-8 text-center">
+            <IoBagHandle className="mb-4 size-20 text-red-500" />
+            <Typography>Este cliente ainda não possui pedidos.</Typography>
           </Card>
         ) : (
           <CustomerOrdersTable data={customerOrders} />
         )}
       </section>
     );
-  } catch (e) {
+  } catch {
     return notFound();
   }
 }

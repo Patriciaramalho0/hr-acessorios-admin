@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PenSquare, Trash2, Plus } from "lucide-react";
@@ -10,11 +11,13 @@ import { ExportDataButtons } from "@/components/shared/ExportDataButtons";
 
 import CouponFormSheet from "./form/CouponFormSheet";
 import CouponBulkActionSheet from "./form/CouponBulkActionSheet";
+
 import { addCoupon } from "@/actions/coupons/addCoupon";
 import { deleteCoupons } from "@/actions/coupons/deleteCoupons";
+import { editCoupons } from "@/actions/coupons/editCoupons";
 import { exportCoupons } from "@/actions/coupons/exportCoupons";
+
 import { RowSelectionProps } from "@/types/data-table";
-import { editCategories } from "@/actions/categories/editCategories";
 import { useAuthorization } from "@/hooks/use-authorization";
 
 export default function CouponActions({
@@ -35,7 +38,7 @@ export default function CouponActions({
             {hasPermission("coupons", "canEdit") && (
               <CouponBulkActionSheet
                 action={(formData) =>
-                  editCategories(Object.keys(rowSelection), formData)
+                  editCoupons(Object.keys(rowSelection), formData)
                 }
                 onSuccess={() => setRowSelection({})}
               >
@@ -47,7 +50,8 @@ export default function CouponActions({
                     disabled={!Boolean(Object.keys(rowSelection).length)}
                     className="sm:flex-grow xl:flex-grow-0 transition-opacity duration-300"
                   >
-                    <PenSquare className="mr-2 size-4" /> Bulk Action
+                    <PenSquare className="mr-2 size-4" />
+                    Ação em lote
                   </Button>
                 </SheetTrigger>
               </CouponBulkActionSheet>
@@ -55,10 +59,10 @@ export default function CouponActions({
 
             {hasPermission("coupons", "canDelete") && (
               <ActionAlertDialog
-                title={`Delete ${Object.keys(rowSelection).length} coupons?`}
-                description="This action cannot be undone. This will permanently delete the coupons and their associated data from the database."
-                actionButtonText="Delete Coupons"
-                toastSuccessMessage="Coupons deleted successfully"
+                title={`Excluir ${Object.keys(rowSelection).length} cupons?`}
+                description="Esta ação não pode ser desfeita. Os cupons selecionados serão excluídos permanentemente."
+                actionButtonText="Excluir cupons"
+                toastSuccessMessage="Cupons excluídos com sucesso"
                 queryKey="coupons"
                 action={() => deleteCoupons(Object.keys(rowSelection))}
                 onSuccess={() => setRowSelection({})}
@@ -71,17 +75,17 @@ export default function CouponActions({
                   className="sm:flex-grow xl:flex-grow-0 transition-opacity duration-300"
                 >
                   <Trash2 className="mr-2 size-4" />
-                  Delete
+                  Excluir
                 </Button>
               </ActionAlertDialog>
             )}
 
             {hasPermission("coupons", "canCreate") && (
               <CouponFormSheet
-                title="Add Coupon"
-                description="Add necessary coupon information here"
-                submitButtonText="Add Coupon"
-                actionVerb="added"
+                title="Adicionar cupom"
+                description="Adicione as informações do cupom."
+                submitButtonText="Adicionar cupom"
+                actionVerb="adicionado"
                 action={addCoupon}
               >
                 <SheetTrigger asChild>
@@ -90,7 +94,8 @@ export default function CouponActions({
                     size="lg"
                     className="sm:flex-grow xl:flex-grow-0"
                   >
-                    <Plus className="mr-2 size-4" /> Add Coupon
+                    <Plus className="mr-2 size-4" />
+                    Adicionar cupom
                   </Button>
                 </SheetTrigger>
               </CouponFormSheet>

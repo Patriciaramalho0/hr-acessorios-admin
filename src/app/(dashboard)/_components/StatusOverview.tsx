@@ -1,44 +1,44 @@
+﻿
 import {
   HiOutlineShoppingCart,
-  HiOutlineRefresh,
   HiOutlineCheck,
-} from "react-icons/hi";
-import { BsTruck } from "react-icons/bs";
+  HiOutlineXMark,
+} from "react-icons/hi2";
 
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import Typography from "@/components/ui/typography";
-import { DashboardCard } from "@/types/card";
+import { DashboardData } from "@/services/dashboard";
 
-export default function StatusOverview() {
-  const cards: DashboardCard[] = [
+export default function StatusOverview({ data }: { data: DashboardData }) {
+  const cards = [
     {
       icon: <HiOutlineShoppingCart />,
-      title: "Total Orders",
-      value: "815",
+      title: "Total de pedidos",
+      value: data.orders.total,
       className:
         "text-orange-600 dark:text-orange-100 bg-orange-100 dark:bg-orange-500",
     },
     {
-      icon: <HiOutlineRefresh />,
-      title: "Orders Pending",
-      value: "263",
+      icon: <HiOutlineShoppingCart />,
+      title: "Pedidos pendentes",
+      value: data.orders.pending,
       className:
         "text-teal-600 dark:text-teal-100 bg-teal-100 dark:bg-teal-500",
     },
     {
-      icon: <BsTruck />,
-      title: "Orders Processing",
-      value: "97",
-      className:
-        "text-blue-600 dark:text-blue-100 bg-blue-100 dark:bg-blue-500",
-    },
-    {
       icon: <HiOutlineCheck />,
-      title: "Orders Delivered",
-      value: "418",
+      title: "Pedidos pagos",
+      value: data.orders.paid,
       className:
         "text-emerald-600 dark:text-emerald-100 bg-emerald-100 dark:bg-emerald-500",
+    },
+    {
+      icon: <HiOutlineXMark />,
+      title: "Pedidos cancelados",
+      value: data.orders.canceled,
+      className:
+        "text-red-600 dark:text-red-100 bg-red-100 dark:bg-red-500",
     },
   ];
 
@@ -60,7 +60,6 @@ export default function StatusOverview() {
               <Typography className="text-sm text-muted-foreground">
                 {card.title}
               </Typography>
-
               <Typography className="text-2xl font-semibold text-popover-foreground">
                 {card.value}
               </Typography>
@@ -71,3 +70,5 @@ export default function StatusOverview() {
     </div>
   );
 }
+
+

@@ -1,5 +1,5 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 
+import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/supabase";
 import { Notification } from "./types";
 
@@ -10,16 +10,16 @@ export async function fetchNotifications(
   const { data, error } = await client
     .from("notifications")
     .select("*")
-    .eq("staff_id", staffId)
+    .eq("user_id", staffId)
     .eq("published", true)
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching notifications:", error.message);
-    throw new Error(error.message);
+    console.error("Failed to fetch notifications:", error);
+    throw error;
   }
 
-  return data;
+  return data ?? [];
 }
 
 export async function deleteNotification(
@@ -32,11 +32,9 @@ export async function deleteNotification(
     .eq("id", notificationId);
 
   if (error) {
-    console.error("Error deleting notification:", error.message);
-    throw new Error("Could not dismiss the notification.");
+    console.error("Failed to delete notification:", error);
+    throw error;
   }
-
-  return;
 }
 
 export async function fetchNotificationsCount(
@@ -46,13 +44,13 @@ export async function fetchNotificationsCount(
   const { count, error } = await client
     .from("notifications")
     .select("*", { count: "exact", head: true })
-    .eq("staff_id", staffId)
+    .eq("user_id", staffId)
     .eq("is_read", false)
     .eq("published", true);
 
   if (error) {
-    console.error("Error fetching notification count:", error.message);
-    throw new Error("Could not fetch notification count.");
+    console.error("Failed to count notifications:", error);
+    throw error;
   }
 
   return count ?? 0;

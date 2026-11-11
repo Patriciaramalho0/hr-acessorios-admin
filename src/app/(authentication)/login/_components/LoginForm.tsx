@@ -10,37 +10,42 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("helenzinhalr@hotmail.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
+
     setIsPending(true);
     setErrorMsg("");
 
     try {
       const supabase = createBrowserClient();
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
       if (error) {
-        console.warn("Supabase auth falhou, mas liberando acesso direto:", error.message);
-        // Fallback de emergência: entra direto no painel mesmo se o Supabase recusar
-        toast.success("Acesso direto liberado!");
-        window.location.replace("/dashboard");
+        setErrorMsg(error.message);
+        toast.error("Não foi possível entrar. Confira seu e-mail e senha.");
         return;
       }
 
       toast.success("Login efetuado com sucesso!");
-      window.location.replace("/dashboard");
-    } catch (err) {
-      // Se houver qualquer erro de rede ou falha crítica, entra direto
-      window.location.replace("/dashboard");
+
+      // A página inicial do painel está na rota "/".
+      window.location.replace("/");
+    } catch {
+      setErrorMsg("Não foi possível conectar ao servidor. Tente novamente.");
+      toast.error("Erro ao realizar login.");
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -65,6 +70,7 @@ export default function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="email"
           />
         </div>
 
@@ -76,10 +82,15 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            autoComplete="current-password"
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={isPending}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isPending}
+        >
           {isPending ? "Entrando..." : "Entrar"}
         </Button>
       </form>

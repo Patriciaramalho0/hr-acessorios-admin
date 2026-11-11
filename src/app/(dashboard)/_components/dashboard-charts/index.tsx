@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -13,6 +14,7 @@ import {
 
 import WeeklySales from "./WeeklySales";
 import BestSellers from "./BestSellers";
+import type { DashboardData } from "@/services/dashboard";
 
 ChartJS.register(
   LinearScale,
@@ -24,7 +26,7 @@ ChartJS.register(
   Tooltip
 );
 
-export default function DashboardCharts() {
+export default function DashboardCharts({ data }: { data: DashboardData }) {
   ChartJS.defaults.font.family = "'Poppins', sans-serif";
   ChartJS.defaults.font.size = 12;
   ChartJS.defaults.font.weight = "normal";
@@ -32,8 +34,8 @@ export default function DashboardCharts() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <WeeklySales />
-      <BestSellers />
+      <WeeklySales data={data} />
+      <BestSellers data={data} />
     </div>
   );
 }

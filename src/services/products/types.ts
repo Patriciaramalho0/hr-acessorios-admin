@@ -1,11 +1,19 @@
-import { Database } from "@/types/supabase";
-import { Pagination } from "@/types/pagination";
 
-import { SBCategory } from "../categories/types";
+import { Pagination } from "@/types/pagination";
 
 export type ProductStatus = "selling" | "out-of-stock";
 
-export type SBProduct = Database["public"]["Tables"]["products"]["Row"];
+export type SBProduct = {
+  published: boolean;
+  id: string;
+  name: string;
+  price: number;
+  old_price: number | null;
+  image_url: string | null;
+  stock: number | null;
+  category_id: string | null;
+  created_at: string;
+};
 
 export type Product = SBProduct & {
   categories: {
@@ -30,19 +38,8 @@ export interface FetchProductsResponse {
   pagination: Pagination;
 }
 
-export type ProductDetails = Pick<
-  SBProduct,
-  | "id"
-  | "name"
-  | "description"
-  | "cost_price"
-  | "selling_price"
-  | "stock"
-  | "min_stock_threshold"
-  | "category_id"
-  | "image_url"
-  | "slug"
-  | "sku"
-> & {
-  categories: Pick<SBCategory, "name">;
+export type ProductDetails = SBProduct & {
+  categories: {
+    name: string | null;
+  } | null;
 };

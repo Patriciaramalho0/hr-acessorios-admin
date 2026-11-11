@@ -1,52 +1,49 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
-
 import { createServerActionClient } from "@/lib/supabase/server-action";
 import { ServerActionResponse } from "@/types/server-action";
 
 export async function deleteCoupons(
   couponIds: string[]
 ): Promise<ServerActionResponse> {
-  const supabase = createServerActionClient();
+  if (!couponIds.length) return { success: true };
 
-  const { data: couponsData, error: fetchError } = await supabase
+  const supabase = await createServerActionClient();
+
+  const { data, error: fetchError } = await supabase
     .from("coupons")
     .select("image_url")
     .in("id", couponIds);
 
   if (fetchError) {
-    console.error("Failed to fetch coupons for deletion:", fetchError);
-    return { dbError: "Could not find the coupons to delete." };
+    console.error("Failed to fetch coupons:", fetchError);
+    return { dbError: "Não foi possível localizar os cupons." };
   }
 
-  const imageFileNames =
-    couponsData
-      ?.map((coupon) => coupon.image_url)
-      .filter(Boolean)
-      .map((url) => `coupons/${url.split("/").pop()}`) ?? [];
+  const imageFileNames = (data ?? [])
+    .map((coupon) => coupon.image_url)
+    .filter((url): url is string => Boolean(url))
+    .map((url) => `coupons/${url.split("/").pop()}`);
 
-  if (imageFileNames.length > 0) {
-    const { error: storageError } = await supabase.storage
-      .from("assets")
+  if (imageFileNames.length) {
+    const { error } = await supabase.storage
+      .from("coupons")
       .remove(imageFileNames);
 
-    if (storageError) {
-      console.error("Failed to delete coupon images:", storageError);
-    }
+    if (error) console.error("Failed to delete coupon images:", error);
   }
 
-  const { error: dbError } = await supabase
+  const { error } = await supabase
     .from("coupons")
     .delete()
     .in("id", couponIds);
 
-  if (dbError) {
-    console.error("Database bulk delete failed:", dbError);
-    return { dbError: "Something went wrong. Could not delete the coupons." };
+  if (error) {
+    console.error("Failed to delete coupons:", error);
+    return { dbError: "Não foi possível excluir os cupons." };
   }
 
   revalidatePath("/coupons");
-
   return { success: true };
 }

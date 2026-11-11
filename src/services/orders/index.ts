@@ -1,13 +1,67 @@
-import { SupabaseClient } from "@supabase/supabase-js";
-
+﻿import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/supabase";
 import { queryPaginatedTable } from "@/helpers/queryPaginatedTable";
 import {
   Order,
+  OrderDetails,
+  OrderItem,
   FetchOrdersParams,
   FetchOrdersResponse,
-  OrderDetails,
 } from "./types";
+
+function normalizeItems(value: unknown): OrderItem[] {
+  let source = value;
+
+  if (typeof source === "string") {
+    try {
+      source = JSON.parse(source);
+    } catch {
+      return [];
+    }
+  }
+
+  if (source && !Array.isArray(source) && typeof source === "object") {
+    const object = source as Record<string, unknown>;
+    source = object.items ?? object.products ?? [];
+  }
+
+  if (!Array.isArray(source)) return [];
+
+  return source.map((item: any) => ({
+    name: String(
+      item?.name ??
+      item?.product_name ??
+      item?.title ??
+      item?.product?.name ??
+      "Produto"
+    ),
+    quantity: Math.max(0, Number(item?.quantity ?? item?.qty ?? 1) || 1),
+    unit_price: Math.max(
+      0,
+      Number(
+        item?.unit_price ??
+        item?.price ??
+        item?.unitPrice ??
+        item?.product?.price ??
+        0
+      ) || 0
+    ),
+  }));
+}
+
+function normalizeOrder(row: any): Order {
+  return {
+    id: String(row.id),
+    checkout: typeof row.items === "object" && row.items !== null && !Array.isArray(row.items) ? row.items.checkout : undefined,
+    customer_name: String(row.customer_name ?? "Cliente não informado"),
+    customer_phone: String(row.customer_phone ?? ""),
+    items: normalizeItems(row.items),
+    total_amount: Number(row.total_amount ?? 0),
+    payment_status: row.payment_status ?? "pendente",
+    payment_method: row.payment_method ?? "",
+    created_at: row.created_at,
+  };
+}
 
 export async function fetchOrders(
   client: SupabaseClient<Database>,
@@ -21,85 +75,78 @@ export async function fetchOrders(
     endDate,
   }: FetchOrdersParams
 ): Promise<FetchOrdersResponse> {
-  const selectQuery = `
-    *,
-    customers!inner (
-      name
-    )
-  `;
+  const db = client as any;
 
-  let query = client.from("orders").select(selectQuery, { count: "exact" });
+  let query = db
+    .from("orders")
+    .select(
+      "id, customer_name, customer_phone, items, total_amount, payment_status, payment_method, created_at",
+      { count: "exact" }
+    );
 
-  if (search) {
-    query = query.ilike("customers.name", `%${search}%`);
+  if (search?.trim()) {
+    const term = search.trim().replace(/[,%()]/g, "");
+    query = query.or(
+      `customer_name.ilike.%${term}%,customer_phone.ilike.%${term}%`
+    );
   }
 
-  if (status) {
-    query = query.eq("status", status);
+  if (status && status !== "all") {
+    query = query.eq("payment_status", status);
   }
 
-  if (method) {
+  if (method && method !== "all") {
     query = query.eq("payment_method", method);
   }
 
   if (startDate) {
-    query = query.gte("created_at", startDate);
+    query = query.gte("created_at", `${startDate}T00:00:00`);
   }
 
   if (endDate) {
-    const endDay = new Date(endDate);
-    const nextDay = new Date(endDay);
-    nextDay.setDate(endDay.getDate() + 1);
-
+    const nextDay = new Date(`${endDate}T12:00:00`);
+    nextDay.setDate(nextDay.getDate() + 1);
     query = query.lt("created_at", nextDay.toISOString());
   }
 
   query = query.order("created_at", { ascending: false });
 
-  const paginatedOrders = await queryPaginatedTable<Order, "orders">({
+  const result = await queryPaginatedTable<any, "orders">({
     name: "orders",
     page,
     limit,
     query,
   });
 
-  return paginatedOrders;
+  return {
+    ...result,
+    data: (result.data ?? []).map(normalizeOrder),
+  };
 }
 
 export async function fetchOrderDetails(
   client: SupabaseClient<Database>,
   { id }: { id: string }
-) {
-  const selectQuery = `
-    id,
-    invoice_no,
-    order_time,
-    total_amount,
-    shipping_cost,
-    payment_method,
-    status,
-    customers(name, email, phone, address),
-    order_items(quantity, unit_price, products(name)),
-    coupons(discount_type, discount_value)
-  `;
+): Promise<{ order: OrderDetails }> {
+  const db = client as any;
 
-  const { data, error } = await client
+  const { data, error } = await db
     .from("orders")
-    .select(selectQuery)
+    .select(
+      "id, customer_name, customer_phone, items, total_amount, payment_status, payment_method, created_at"
+    )
     .eq("id", id)
     .single();
 
-  if (error) {
-    console.error(error.message);
-    throw new Error(`Failed to fetch order details: ${error.message}`);
-  }
-
-  if (!data) {
-    console.error("Failed to fetch order details");
-    throw new Error("Failed to fetch order details");
+  if (error || !data) {
+    console.error("Erro ao buscar pedido:", error?.message);
+    throw new Error("Não foi possível localizar este pedido.");
   }
 
   return {
-    order: data as OrderDetails,
+    order: {
+      ...normalizeOrder(data),
+      items: normalizeItems(data.items),
+    },
   };
 }

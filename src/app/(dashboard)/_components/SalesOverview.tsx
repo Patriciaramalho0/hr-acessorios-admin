@@ -1,59 +1,66 @@
-import { HiOutlineRefresh } from "react-icons/hi";
-import { HiOutlineSquare3Stack3D, HiCalendarDays } from "react-icons/hi2";
+﻿
+import {
+  HiOutlineSquare3Stack3D,
+  HiCalendarDays,
+} from "react-icons/hi2";
 
 import { cn } from "@/lib/utils";
 import Typography from "@/components/ui/typography";
-import { DashboardCard } from "@/types/card";
+import { DashboardData } from "@/services/dashboard";
 
-export default function SalesOverview() {
-  const cards: DashboardCard[] = [
+export default function SalesOverview({ data }: { data: DashboardData }) {
+  const currency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+
+  const cards = [
     {
       icon: <HiOutlineSquare3Stack3D />,
-      title: "Today Orders",
-      value: "$897.40",
+      title: "Vendas de hoje",
+      value: currency(data.sales.today),
       className: "bg-teal-600",
     },
     {
       icon: <HiOutlineSquare3Stack3D />,
-      title: "Yesterday Orders",
-      value: "$679.93",
+      title: "Vendas de ontem",
+      value: currency(data.sales.yesterday),
       className: "bg-orange-400",
     },
     {
-      icon: <HiOutlineRefresh />,
-      title: "This Month",
-      value: "$13146.96",
+      icon: <HiCalendarDays />,
+      title: "Este mês",
+      value: currency(data.sales.thisMonth),
       className: "bg-blue-500",
     },
     {
       icon: <HiCalendarDays />,
-      title: "Last Month",
-      value: "$31964.92",
+      title: "Mês anterior",
+      value: currency(data.sales.lastMonth),
       className: "bg-cyan-600",
     },
     {
       icon: <HiCalendarDays />,
-      title: "All-Time Sales",
-      value: "$626513.05",
+      title: "Vendas acumuladas",
+      value: currency(data.sales.allTime),
       className: "bg-emerald-600",
     },
   ];
 
   return (
     <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-2">
-      {cards.map((card, index) => (
+      {cards.map((card) => (
         <div
-          key={`sales-overview-${index}`}
+          key={card.title}
           className={cn(
             "p-6 rounded-lg flex flex-col items-center justify-center space-y-3 text-white text-center",
             card.className
           )}
         >
           <div className="[&>svg]:size-8">{card.icon}</div>
-
           <Typography className="text-base">{card.title}</Typography>
-
-          <Typography className="text-2xl font-semibold">
+          <Typography className="text-xl font-semibold">
             {card.value}
           </Typography>
         </div>
@@ -61,3 +68,6 @@ export default function SalesOverview() {
     </div>
   );
 }
+
+
+

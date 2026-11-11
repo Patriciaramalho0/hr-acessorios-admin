@@ -1,6 +1,12 @@
+const { WindowsBuildFilesystemPlugin } = require("./scripts/windows-build-filesystem.cjs");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  webpack(config) {
+    if (process.platform === "win32") config.plugins.push(new WindowsBuildFilesystemPlugin());
+    return config;
+  },
   images: {
     remotePatterns: [
       {
@@ -25,7 +31,7 @@ const nextConfig = {
     unoptimized: true,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: true,

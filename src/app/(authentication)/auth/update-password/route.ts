@@ -1,12 +1,11 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@/lib/supabase/server";
 
 import { passwordUpdateFormSchema } from "@/app/(authentication)/update-password/_components/schema";
 import validateFormData from "@/helpers/validateFormData";
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createServerClient();
 
   // Get form fields
   const { password, confirmPassword, code } = await request.json();

@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 
@@ -8,7 +8,7 @@ import { ServerActionResponse } from "@/types/server-action";
 export async function deleteProduct(
   productId: string
 ): Promise<ServerActionResponse> {
-  const supabase = createServerActionClient();
+  const supabase = await createServerActionClient();
 
   const { data: productData, error: fetchError } = await supabase
     .from("products")
@@ -28,7 +28,7 @@ export async function deleteProduct(
 
     if (imageFileName) {
       const { error: storageError } = await supabase.storage
-        .from("assets")
+        .from("products")
         .remove([imageFileName]);
 
       if (storageError) {
@@ -51,3 +51,4 @@ export async function deleteProduct(
 
   return { success: true };
 }
+

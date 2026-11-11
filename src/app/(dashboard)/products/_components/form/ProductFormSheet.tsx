@@ -1,6 +1,13 @@
+
 "use client";
 
-import { useRef, LegacyRef, useState, useTransition, useEffect } from "react";
+import {
+  useRef,
+  LegacyRef,
+  useState,
+  useTransition,
+  useEffect,
+} from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FieldErrors } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,14 +27,14 @@ import {
   FormSheetHeader,
   FormSheetFooter,
 } from "@/components/shared/form/FormSheet";
+
 import {
   FormTextInput,
   FormCategoryInput,
   FormImageInput,
   FormPriceInput,
-  FormSlugInput,
-  FormTextarea,
 } from "@/components/shared/form";
+
 import { FormSubmitButton } from "@/components/shared/form/FormSubmitButton";
 
 import { productFormSchema, ProductFormData } from "./schema";
@@ -66,9 +73,11 @@ export default function ProductFormSheet({
   action,
 }: ProductFormProps) {
   const queryClient = useQueryClient();
+
   const [isPending, startTransition] = useTransition();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [container, setContainer] = useState(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+
   const imageDropzoneRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLButtonElement>(null);
 
@@ -76,49 +85,61 @@ export default function ProductFormSheet({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
-      description: "",
       image: undefined,
-      sku: "",
       category: "",
-      costPrice: 0,
-      salesPrice: 0,
+      price: 0,
+      oldPrice: 0,
       stock: 0,
-      minStockThreshold: 0,
-      slug: "",
       ...initialData,
     },
   });
 
   useEffect(() => {
-    form.reset(initialData);
+    form.reset(initialData ?? {});
   }, [form, initialData]);
 
   const onSubmit = (data: ProductFormData) => {
     const formData = objectToFormData(data);
 
     startTransition(async () => {
-      const result = await action(formData);
+      try {
+        const result = await action(formData);
 
-      if ("validationErrors" in result) {
-        Object.keys(result.validationErrors).forEach((key) => {
-          form.setError(key as keyof ProductFormData, {
-            message: result.validationErrors![key],
+        if ("validationErrors" in result) {
+          Object.keys(result.validationErrors).forEach((key) => {
+            form.setError(key as keyof ProductFormData, {
+              message: result.validationErrors![key],
+            });
           });
+
+          const firstError = Object.keys(result.validationErrors)[0];
+
+          if (firstError) {
+            form.setFocus(firstError as keyof ProductFormData);
+          }
+
+          return;
+        }
+
+        if ("dbError" in result) {
+          toast.error(result.dbError);
+          return;
+        }
+
+        form.reset();
+
+        toast.success(`Produto ${actionVerb} com sucesso!`, {
+          position: "top-center",
         });
 
-        form.setFocus(
-          Object.keys(result.validationErrors)[0] as keyof ProductFormData
-        );
-      } else if ("dbError" in result) {
-        toast.error(result.dbError);
-      } else {
-        form.reset();
-        toast.success(
-          `Product "${result.product.name}" ${actionVerb} successfully!`,
-          { position: "top-center" }
-        );
-        queryClient.invalidateQueries({ queryKey: ["products"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["products"],
+        });
+
         setIsSheetOpen(false);
+      } catch (error) {
+        console.error("Erro ao salvar produto:", error);
+        toast.error("Não foi possível salvar o produto.");
       }
     });
   };
@@ -157,83 +178,55 @@ export default function ProductFormSheet({
                   <FormTextInput
                     control={form.control}
                     name="name"
-                    label="Product Name"
-                    placeholder="Product Name / Title"
-                  />
-
-                  <FormTextarea
-                    control={form.control}
-                    name="description"
-                    label="Product Description"
-                    placeholder="Product Description"
+                    label="Nome do produto"
+                    placeholder="Digite o nome do produto"
                   />
 
                   <FormImageInput
                     control={form.control}
                     name="image"
-                    label="Product Image"
-                    previewImage={previewImage}
+                    label="Imagem do produto"
+                    previewImage={previewImage ?? ""}
                     ref={imageDropzoneRef}
-                  />
-
-                  <FormTextInput
-                    control={form.control}
-                    name="sku"
-                    label="Product SKU"
-                    placeholder="Product SKU"
                   />
 
                   <FormCategoryInput
                     control={form.control}
                     name="category"
-                    label="Category"
+                    label="Categoria"
                     container={container || undefined}
                     ref={categoryRef}
                   />
 
                   <FormPriceInput
                     control={form.control}
-                    name="costPrice"
-                    label="Cost Price"
-                    placeholder="Original Price"
+                    name="price"
+                    label="Preço de venda"
+                    placeholder="Preço do produto"
                   />
 
                   <FormPriceInput
                     control={form.control}
-                    name="salesPrice"
-                    label="Sale Price"
-                    placeholder="Sale Price"
+                    name="oldPrice"
+                    label="Preço anterior"
+                    placeholder="Preço anterior (opcional)"
                   />
 
                   <FormTextInput
                     control={form.control}
                     name="stock"
-                    label="Product Quantity"
-                    placeholder="Product Quantity"
+                    label="Quantidade em estoque"
+                    placeholder="Quantidade"
                     type="number"
-                  />
-
-                  <FormTextInput
-                    control={form.control}
-                    name="minStockThreshold"
-                    label="Min Stock Threshold"
-                    placeholder="Minimum Stock Threshold"
-                    type="number"
-                  />
-
-                  <FormSlugInput
-                    form={form}
-                    control={form.control}
-                    name="slug"
-                    label="Product Slug"
-                    placeholder="Product Slug"
-                    generateSlugFrom="name"
                   />
                 </div>
               </FormSheetBody>
 
               <FormSheetFooter>
-                <FormSubmitButton isPending={isPending} className="w-full">
+                <FormSubmitButton
+                  isPending={isPending}
+                  className="w-full"
+                >
                   {submitButtonText}
                 </FormSubmitButton>
               </FormSheetFooter>

@@ -1,10 +1,11 @@
-import { Database } from "@/types/supabase";
+
 import { Pagination } from "@/types/pagination";
 
 export type StaffStatus = "active" | "inactive";
 
-export type SBStaff = Database["public"]["Tables"]["staff"]["Row"];
-type SBStaffRole = Database["public"]["Tables"]["staff_roles"]["Row"];
+// Modelo de apresentação legado; não representa tabelas da loja atual.
+export type SBStaff = { id: string; email: string; name: string; phone: string | null; image_url: string | null; created_at: string; joining_date: string; updated_at: string; published: boolean; role_id: number };
+type SBStaffRole = { name: "super_admin" | "admin" | "cashier"; display_name: string };
 
 export type Staff = SBStaff & {
   staff_roles: {

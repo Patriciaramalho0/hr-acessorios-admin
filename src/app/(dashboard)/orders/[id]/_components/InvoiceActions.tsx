@@ -16,29 +16,35 @@ export function InvoiceActions({ order }: { order: OrderDetails }) {
 
   const downloadInvoice = () => {
     downloadTemplate({
-      htmlId: `invoice-${order.invoice_no}`,
-      pdfName: `Invoice-${order.invoice_no}`,
+      htmlId: `invoice-${order.id}`,
+      pdfName: `pedido-${order.id.slice(0, 8)}`,
     });
   };
 
   return (
     <>
-      <div className="flex flex-wrap gap-3 justify-between print:hidden">
+      <div className="flex flex-wrap justify-between gap-3">
         <Button size="lg" disabled={isLoading} onClick={downloadInvoice}>
-          Download Invoice{" "}
           {isLoading ? (
-            <Loader2 className="ml-2 size-4 animate-spin" />
+            <>
+              Gerando PDF
+              <Loader2 className="ml-2 size-4 animate-spin" />
+            </>
           ) : (
-            <DownloadCloud className="ml-2 size-4" />
+            <>
+              Baixar pedido em PDF
+              <DownloadCloud className="ml-2 size-4" />
+            </>
           )}
         </Button>
 
-        <Button size="lg" onClick={printInvoice}>
-          Print Invoice <Printer className="ml-2 size-4" />
+        <Button size="lg" variant="outline" onClick={printInvoice}>
+          Imprimir pedido
+          <Printer className="ml-2 size-4" />
         </Button>
       </div>
 
-      <div className="absolute -z-[1] opacity-0 -top-[9999px] -left-[9999px]">
+      <div className="pointer-events-none absolute -left-[9999px] -top-[9999px] opacity-0">
         <InvoicePdfTemplate order={order} />
       </div>
     </>

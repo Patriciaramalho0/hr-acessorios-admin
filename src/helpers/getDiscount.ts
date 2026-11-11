@@ -1,24 +1,28 @@
+
 import { SBCoupon } from "@/services/coupons/types";
 import { SBOrder } from "@/services/orders/types";
 
 type Props = {
   coupon: Pick<SBCoupon, "discount_type" | "discount_value"> | null;
   totalAmount: SBOrder["total_amount"];
-  shippingCost: SBOrder["shipping_cost"];
+  shippingCost: number;
 };
 
-export function getDiscount({ coupon, totalAmount, shippingCost }: Props) {
-  let calculatedDiscount = 0;
+export function getDiscount({
+  coupon,
+  totalAmount,
+  shippingCost,
+}: Props) {
+  if (!coupon) return "0.00";
 
-  if (coupon) {
-    if (coupon.discount_type === "fixed") {
-      calculatedDiscount = coupon.discount_value;
-    } else {
-      const subtotal = totalAmount - shippingCost;
-      const originalPrice = (subtotal * 100) / (100 - coupon.discount_value);
-      calculatedDiscount = originalPrice - subtotal;
-    }
+  const subtotal = Math.max(0, totalAmount - shippingCost);
+
+  if (coupon.discount_type === "fixed") {
+    return Math.min(coupon.discount_value, subtotal).toFixed(2);
   }
+
+  const percentage = Math.min(coupon.discount_value, 100);
+  const calculatedDiscount = subtotal * (percentage / 100);
 
   return calculatedDiscount.toFixed(2);
 }

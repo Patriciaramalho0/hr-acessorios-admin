@@ -11,7 +11,10 @@ export async function editProfile(
   userId: string,
   formData: FormData
 ): Promise<ProfileServerActionResponse> {
-  const supabase = createServerActionClient();
+  const supabase = await createServerActionClient();
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user || user.id !== userId) return { dbError: "Perfil não autorizado." };
 
   const parsedData = profileFormSchema.safeParse({
     name: formData.get("name"),
@@ -32,21 +35,8 @@ export async function editProfile(
   let imageUrl: string | undefined;
 
   if (image instanceof File && image.size > 0) {
-    const { data: oldProfileData, error: fetchError } = await supabase
-      .from("staff")
-      .select("email, image_url")
-      .eq("id", userId)
-      .single();
-
-    if (fetchError) {
-      console.error("Failed to fetch profile details:", fetchError);
-      return { dbError: "Could not fetch your profile details." };
-    }
-
-    const oldImageUrl = oldProfileData.image_url;
-
     const fileExt = image.name.split(".").pop();
-    const fileName = `staff/${oldProfileData.email}-${Date.now()}.${fileExt}`;
+    const fileName = `staff/${user.id}-${crypto.randomUUID()}.${fileExt}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("assets")
@@ -63,25 +53,11 @@ export async function editProfile(
 
     imageUrl = publicUrlData.publicUrl;
 
-    if (oldImageUrl) {
-      const oldImageFileName = `staff/${oldImageUrl.split("/").pop()}`;
-
-      if (oldImageFileName) {
-        await supabase.storage.from("assets").remove([oldImageFileName]);
-      }
-    }
   }
 
-  const { error: dbError } = await supabase
-    .from("staff")
-    .update({
-      name: profileData.name,
-      phone: profileData.phone,
-      ...(imageUrl && { image_url: imageUrl }),
-    })
-    .eq("id", userId)
-    .select()
-    .single();
+  const { error: dbError } = await supabase.auth.updateUser({
+    data: { ...user.user_metadata, name: profileData.name, phone: profileData.phone, ...(imageUrl && { image_url: imageUrl }) },
+  });
 
   if (dbError) {
     console.error("Database update failed:", dbError);

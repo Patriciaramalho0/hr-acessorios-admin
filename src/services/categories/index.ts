@@ -1,3 +1,4 @@
+
 import { SupabaseClient } from "@supabase/supabase-js";
 
 import { Database } from "@/types/supabase";
@@ -13,7 +14,11 @@ export async function fetchCategories(
   client: SupabaseClient<Database>,
   { page = 1, limit = 10, search }: FetchCategoriesParams
 ): Promise<FetchCategoriesResponse> {
-  let query = client.from("categories").select("*", { count: "exact" });
+  const db = client as any;
+
+  let query = db
+    .from("categories")
+    .select("id, name, slug, created_at, published", { count: "exact" });
 
   if (search) {
     query = query.ilike("name", `%${search}%`);
@@ -21,27 +26,26 @@ export async function fetchCategories(
 
   query = query.order("created_at", { ascending: false });
 
-  const paginatedCategories = await queryPaginatedTable<Category, "categories">(
-    {
-      name: "categories",
-      page,
-      limit,
-      query,
-    }
-  );
-
-  return paginatedCategories;
+  return queryPaginatedTable<Category, "categories">({
+    name: "categories",
+    page,
+    limit,
+    query,
+  });
 }
 
 export async function fetchCategoriesDropdown(
   client: SupabaseClient<Database>
 ): Promise<CategoryDropdown[]> {
-  const { data, error } = await client
+  const db = client as any;
+
+  const { data, error } = await db
     .from("categories")
-    .select("id, name, slug");
+    .select("id, name, slug")
+    .order("name");
 
   if (error) {
-    console.error("Error fetching categories:", error.message);
+    console.error("Erro ao buscar categorias:", error.message);
     throw new Error(error.message);
   }
 

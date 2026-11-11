@@ -1,3 +1,5 @@
+import { getUser } from "@/helpers/getUser";
+
 import { Metadata } from "next";
 import { ThemeProvider } from "@/lib/theme-provider";
 import TanstackQueryProvider from "@/lib/tanstack-query-provider";
@@ -7,29 +9,29 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/contexts/UserContext";
 
-// pages have to be rendered dynamically because supabase server component client uses cookies
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s - Zorvex",
-    default: "Zorvex",
+    template: "%s | HR Acessórios",
+    default: "HR Acessórios | Painel Administrativo",
   },
+  description: "Painel administrativo da loja HR Acessórios.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getUser();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <TanstackQueryProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <UserProvider>
+            <UserProvider user={user}>
               <TooltipProvider>{children}</TooltipProvider>
-
               <Toaster />
             </UserProvider>
           </ThemeProvider>

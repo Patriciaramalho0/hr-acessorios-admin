@@ -1,3 +1,4 @@
+﻿
 "use client";
 
 import { useState, useTransition } from "react";
@@ -30,37 +31,52 @@ export default function OrderFilters() {
     search: searchParams.get("search") || "",
     status: searchParams.get("status") || "",
     method: searchParams.get("method") || "",
-    startDate: searchParams.get("startDate") || "",
-    endDate: searchParams.get("endDate") || "",
+    startDate: searchParams.get("start-date") || "",
+    endDate: searchParams.get("end-date") || "",
   });
 
   const handleOrdersDownload = () => {
-    toast.info(`Downloading orders...`);
-
     startTransition(async () => {
       const result = await exportOrders();
 
-      if (result.error) {
+      if ("error" in result) {
         toast.error(result.error);
-      } else if (result.data) {
-        exportAsCSV(result.data, "Orders");
+        return;
       }
+
+      exportAsCSV(result.data, "pedidos-hr-acessorios");
+      toast.success("Exportação concluída.");
     });
   };
 
-  const handleFilter = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFilter = (event: React.FormEvent) => {
+    event.preventDefault();
+
     const params = new URLSearchParams();
-    if (filters.search) params.set("search", filters.search);
-    if (filters.status && filters.status !== "all")
+
+    if (filters.search.trim()) {
+      params.set("search", filters.search.trim());
+    }
+
+    if (filters.status && filters.status !== "all") {
       params.set("status", filters.status);
-    if (filters.method && filters.method !== "all")
+    }
+
+    if (filters.method && filters.method !== "all") {
       params.set("method", filters.method);
-    if (filters.startDate) params.set("start-date", filters.startDate);
-    if (filters.endDate) params.set("end-date", filters.endDate);
+    }
+
+    if (filters.startDate) {
+      params.set("start-date", filters.startDate);
+    }
+
+    if (filters.endDate) {
+      params.set("end-date", filters.endDate);
+    }
 
     params.set("page", "1");
     params.set("limit", searchParams.get("limit") || "10");
+
     router.push(`/orders?${params.toString()}`);
   };
 
@@ -72,15 +88,8 @@ export default function OrderFilters() {
       startDate: "",
       endDate: "",
     });
+
     router.push("/orders");
-  };
-
-  const handleSetStartDate = (date: string) => {
-    setFilters({ ...filters, startDate: date });
-  };
-
-  const handleSetEndDate = (date: string) => {
-    setFilters({ ...filters, endDate: date });
   };
 
   return (
@@ -89,42 +98,46 @@ export default function OrderFilters() {
         <div className="flex flex-col md:flex-row gap-4 lg:gap-6">
           <Input
             type="search"
-            placeholder="Search by customer name"
+            placeholder="Buscar por nome ou telefone"
             className="h-12 md:basis-1/4"
             value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            onChange={(event) =>
+              setFilters({ ...filters, search: event.target.value })
+            }
           />
 
           <Select
             value={filters.status}
-            onValueChange={(value) => setFilters({ ...filters, status: value })}
+            onValueChange={(value) =>
+              setFilters({ ...filters, status: value })
+            }
           >
-            <SelectTrigger className="capitalize md:basis-1/4">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="md:basis-1/4">
+              <SelectValue placeholder="Status do pagamento" />
             </SelectTrigger>
-
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="pago">Pago</SelectItem>
+              <SelectItem value="cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>
 
           <Select
             value={filters.method}
-            onValueChange={(value) => setFilters({ ...filters, method: value })}
+            onValueChange={(value) =>
+              setFilters({ ...filters, method: value })
+            }
           >
-            <SelectTrigger className="capitalize md:basis-1/4">
-              <SelectValue placeholder="Method" />
+            <SelectTrigger className="md:basis-1/4">
+              <SelectValue placeholder="Forma de pagamento" />
             </SelectTrigger>
-
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="card">Card</SelectItem>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="credit">Credit</SelectItem>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="pix">PIX</SelectItem>
+              <SelectItem value="cartao">Cartão</SelectItem>
+              <SelectItem value="dinheiro">Dinheiro</SelectItem>
+              <SelectItem value="boleto">Boleto</SelectItem>
             </SelectContent>
           </Select>
 
@@ -134,7 +147,7 @@ export default function OrderFilters() {
             disabled={isPending}
             className="h-12 flex-shrink-0 md:basis-1/4"
           >
-            Download{" "}
+            Exportar pedidos
             {isPending ? (
               <Loader2 className="ml-2 size-4 animate-spin" />
             ) : (
@@ -146,22 +159,33 @@ export default function OrderFilters() {
         <div className="flex flex-col md:flex-row md:items-end gap-4 lg:gap-6">
           <div className="md:basis-[35%]">
             <Label className="text-muted-foreground font-normal">
-              Start date
+              Data inicial
             </Label>
-            <DatePicker date={filters.startDate} setDate={handleSetStartDate} />
+            <DatePicker
+              date={filters.startDate}
+              setDate={(date) =>
+                setFilters({ ...filters, startDate: date })
+              }
+            />
           </div>
 
           <div className="md:basis-[35%]">
             <Label className="text-muted-foreground font-normal">
-              End date
+              Data final
             </Label>
-            <DatePicker date={filters.endDate} setDate={handleSetEndDate} />
+            <DatePicker
+              date={filters.endDate}
+              setDate={(date) =>
+                setFilters({ ...filters, endDate: date })
+              }
+            />
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap gap-4 md:basis-[30%]">
             <Button type="submit" size="lg" className="h-12 flex-grow">
-              Filter
+              Filtrar
             </Button>
+
             <Button
               type="button"
               size="lg"
@@ -169,7 +193,7 @@ export default function OrderFilters() {
               className="h-12 flex-grow"
               onClick={handleReset}
             >
-              Reset
+              Limpar
             </Button>
           </div>
         </div>
@@ -177,3 +201,4 @@ export default function OrderFilters() {
     </Card>
   );
 }
+

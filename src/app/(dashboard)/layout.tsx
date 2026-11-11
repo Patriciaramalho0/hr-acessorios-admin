@@ -1,5 +1,8 @@
+
+import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
+import { getUser } from "@/helpers/getUser";
 import Header from "@/components/shared/header";
 import Container from "@/components/ui/container";
 import AppSidebar from "@/components/shared/sidebar/AppSidebar";
@@ -10,7 +13,13 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
+  const user = await getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const cookieStore = cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
   return (

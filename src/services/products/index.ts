@@ -1,3 +1,4 @@
+
 import { SupabaseClient } from "@supabase/supabase-js";
 
 import { Database } from "@/types/supabase";
@@ -18,99 +19,98 @@ export async function fetchProducts(
     category,
     priceSort,
     status,
-    published,
     dateSort,
   }: FetchProductsParams
 ): Promise<FetchProductsResponse> {
-  const selectQuery = `
-    *,
-    categories!inner (
-      name,
-      slug
-    )
-  `;
+  const db = client as any;
 
-  let query = client.from("products").select(selectQuery, { count: "exact" });
+  let query = db
+    .from("products")
+    .select(
+      `
+        id,
+        name,
+        price,
+        old_price,
+        image_url,
+        stock,
+        published,
+        category_id,
+        created_at,
+        categories (
+          name,
+          slug
+        )
+      `,
+      { count: "exact" }
+    );
 
   if (search) {
     query = query.ilike("name", `%${search}%`);
   }
 
   if (category) {
-    query = query.eq("categories.slug", category);
+    query = query.eq("category_id", category);
   }
 
-  if (status) {
-    if (status === "selling") {
-      query = query.gt("stock", 0);
-    } else if (status === "out-of-stock") {
-      query = query.eq("stock", 0);
-    }
-  }
-
-  if (published !== undefined) {
-    query = query.eq("published", published);
+  if (status === "selling") {
+    query = query.gt("stock", 0);
+  } else if (status === "out-of-stock") {
+    query = query.or("stock.eq.0,stock.is.null");
   }
 
   if (priceSort) {
-    query = query.order("selling_price", {
+    query = query.order("price", {
       ascending: priceSort === "lowest-first",
     });
   } else if (dateSort) {
-    const [field, direction] = dateSort.split("-");
-    query = query.order(field === "added" ? "created_at" : "updated_at", {
+    const [, direction] = dateSort.split("-");
+    query = query.order("created_at", {
       ascending: direction === "asc",
     });
   } else {
     query = query.order("created_at", { ascending: false });
   }
 
-  const paginatedProducts = await queryPaginatedTable<Product, "products">({
+  return queryPaginatedTable<Product, "products">({
     name: "products",
     page,
     limit,
     query,
   });
-
-  return paginatedProducts;
 }
 
 export async function fetchProductDetails(
   client: SupabaseClient<Database>,
   { slug }: { slug: string }
-) {
-  const selectQuery = `
-    id,
-    name,
-    description,
-    cost_price,
-    selling_price,
-    stock,
-    min_stock_threshold,
-    category_id,
-    image_url,
-    slug,
-    sku,
-    categories(name)
-  `;
+): Promise<{ product: ProductDetails }> {
+  const db = client as any;
 
-  const { data, error } = await client
+  const { data, error } = await db
     .from("products")
-    .select(selectQuery)
-    .eq("slug", slug)
+    .select(
+      `
+        id,
+        name,
+        price,
+        old_price,
+        image_url,
+        stock,
+        published,
+        category_id,
+        created_at,
+        categories (
+          name
+        )
+      `
+    )
+    .eq("id", slug)
     .single();
 
-  if (error) {
-    console.error(error.message);
-    throw new Error(`Failed to fetch product details: ${error.message}`);
+  if (error || !data) {
+    console.error("Erro ao buscar produto:", error);
+    throw new Error("Não foi possível encontrar este produto.");
   }
 
-  if (!data) {
-    console.error("Failed to fetch product details");
-    throw new Error("Failed to fetch product details");
-  }
-
-  return {
-    product: data as ProductDetails,
-  };
+  return { product: data as ProductDetails };
 }

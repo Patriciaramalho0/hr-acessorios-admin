@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -42,13 +43,20 @@ export default function ProductFilters() {
 
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
+
     const params = new URLSearchParams();
-    if (filters.search) params.set("search", filters.search);
-    if (filters.category && filters.category !== "all")
+
+    if (filters.search) {
+      params.set("search", filters.search);
+    }
+
+    if (filters.category && filters.category !== "all") {
       params.set("category", filters.category);
+    }
 
     if (filters.sort && filters.sort !== "none") {
       const sortConfig = sortToParamsMap[filters.sort];
+
       if (sortConfig) {
         params.set(sortConfig.key, sortConfig.value);
       }
@@ -56,11 +64,17 @@ export default function ProductFilters() {
 
     params.set("page", "1");
     params.set("limit", searchParams.get("limit") || "10");
+
     router.push(`/products?${params.toString()}`);
   };
 
   const handleReset = () => {
-    setFilters({ search: "", category: "all", sort: "none" });
+    setFilters({
+      search: "",
+      category: "all",
+      sort: "none",
+    });
+
     router.push("/products");
   };
 
@@ -68,19 +82,23 @@ export default function ProductFilters() {
     <Card className="mb-5">
       <form
         onSubmit={handleFilter}
-        className="flex flex-col md:flex-row gap-4 lg:gap-6"
+        className="flex flex-col gap-4 md:flex-row lg:gap-6"
       >
         <Input
           type="search"
           placeholder="Search product..."
           className="h-12 md:basis-[30%]"
           value={filters.search}
-          onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+          onChange={(e) =>
+            setFilters({ ...filters, search: e.target.value })
+          }
         />
 
         <Select
           value={filters.category}
-          onValueChange={(value) => setFilters({ ...filters, category: value })}
+          onValueChange={(value) =>
+            setFilters({ ...filters, category: value })
+          }
         >
           <SelectTrigger className="md:basis-1/5">
             <SelectValue placeholder="Category" />
@@ -92,25 +110,28 @@ export default function ProductFilters() {
               isError={isError}
               errorMessage="Failed to load categories"
             >
-              <SelectItem key="all" value="all">
-                All Categories
-              </SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
 
               {!isLoading &&
                 !isError &&
-                categories &&
-                categories!.map((category) => (
-                  <SelectItem key={category.slug} value={category.slug}>
-                    {category.name}
-                  </SelectItem>
-                ))}
+                categories
+                  ?.map((category) => (
+                    <SelectItem
+                      key={category.id}
+                      value={category.id}
+                    >
+                      {category.name}
+                    </SelectItem>
+                  ))}
             </FetchDropdownContainer>
           </SelectContent>
         </Select>
 
         <Select
           value={filters.sort}
-          onValueChange={(value) => setFilters({ ...filters, sort: value })}
+          onValueChange={(value) =>
+            setFilters({ ...filters, sort: value })
+          }
         >
           <SelectTrigger className="md:basis-1/5">
             <SelectValue placeholder="Sort by" />
@@ -135,10 +156,11 @@ export default function ProductFilters() {
           </SelectContent>
         </Select>
 
-        <div className="flex flex-wrap sm:flex-nowrap gap-4 md:basis-[30%]">
+        <div className="flex flex-wrap gap-4 md:basis-[30%] sm:flex-nowrap">
           <Button type="submit" size="lg" className="flex-grow">
             Filter
           </Button>
+
           <Button
             type="button"
             size="lg"

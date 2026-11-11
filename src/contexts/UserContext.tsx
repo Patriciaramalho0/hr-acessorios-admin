@@ -2,9 +2,9 @@
 
 import { createContext, useContext } from "react";
 import { User } from "@supabase/supabase-js";
-import { Tables } from "@/types/supabase";
 
-export type UserRole = Tables<"staff_roles">["name"];
+
+export type UserRole = "super_admin" | "admin" | "cashier";
 
 type UserProfile = {
   name: string | null;
@@ -18,33 +18,15 @@ type UserContextType = {
   isLoading: boolean;
 };
 
-const mockUser = {
-  id: "helenzinha-id",
-  email: "helenzinhalr@hotmail.com",
-} as User;
-
-const mockProfile = {
-  name: "Helen",
-  image_url: null,
-  role: "admin" as UserRole,
-};
-
-const UserContext = createContext<UserContextType>({
-  user: mockUser,
-  profile: mockProfile,
-  isLoading: false,
-});
-
-export function UserProvider({ children }: { children: React.ReactNode }) {
-  const value = {
-    user: mockUser,
-    profile: mockProfile,
-    isLoading: false,
-  };
-
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+const UserContext = createContext<UserContextType>({ user: null, profile: null, isLoading: false });
+export function UserProvider({ children, user = null }: { children: React.ReactNode; user?: User | null }) {
+  const profile: UserProfile | null = user ? {
+    name: user.user_metadata?.name ?? user.email ?? null,
+    image_url: user.user_metadata?.image_url ?? null,
+    role: "super_admin",
+  } : null;
+  return <UserContext.Provider value={{ user, profile, isLoading: false }}>{children}</UserContext.Provider>;
 }
-
 export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {

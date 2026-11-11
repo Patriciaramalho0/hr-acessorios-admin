@@ -1,7 +1,8 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { ZoomIn } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,16 +13,28 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatAmount } from "@/helpers/formatAmount";
-
 import { TableSelect } from "@/components/shared/table/TableSelect";
-import { OrderBadgeVariants } from "@/constants/badge";
 import { Order, OrderStatus } from "@/services/orders/types";
 import { SkeletonColumn } from "@/types/skeleton";
-
 import { changeOrderStatus } from "@/actions/orders/changeOrderStatus";
 import { PrintInvoiceButton } from "./PrintInvoiceButton";
 import { HasPermission } from "@/hooks/use-authorization";
+
+const currency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value || 0);
+
+const statusLabel = (status: string | null) => {
+  const value = (status || "pendente").toLowerCase();
+
+  if (value === "pago" || value === "paid") return "Pago";
+  if (value === "cancelado" || value === "cancelled") return "Cancelado";
+  if (value === "pendente" || value === "pending") return "Pendente";
+
+  return status || "Pendente";
+};
 
 export const getColumns = ({
   hasPermission,
@@ -30,103 +43,96 @@ export const getColumns = ({
 }) => {
   const columns: ColumnDef<Order>[] = [
     {
-      header: "invoice no",
-      cell: ({ row }) => row.original.invoice_no,
-    },
-    {
-      header: "order time",
-      cell: ({ row }) =>
-        `${format(row.original.order_time, "PP")} ${format(
-          row.original.order_time,
-          "p"
-        )}`,
-    },
-    {
-      header: "customer name",
+      header: "Cliente",
       cell: ({ row }) => (
-        <span className="block max-w-52 truncate">
-          {row.original.customers?.name}
+        <div className="max-w-48">
+          <p className="truncate font-medium">
+            {row.original.customer_name}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {row.original.customer_phone || "Telefone não informado"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      header: "Data do pedido",
+      cell: ({ row }) =>
+        format(new Date(row.original.created_at), "dd/MM/yyyy HH:mm", {
+          locale: ptBR,
+        }),
+    },
+    {
+      header: "Pagamento",
+      cell: ({ row }) => (
+        <span className="capitalize">
+          {row.original.payment_method || "Não informado"}
         </span>
       ),
     },
     {
-      header: "method",
+      header: "Total",
       cell: ({ row }) => (
-        <span className="capitalize">{row.original.payment_method}</span>
+        <span className="font-semibold">
+          {currency(Number(row.original.total_amount))}
+        </span>
       ),
     },
     {
-      header: "amount",
-      cell: ({ row }) => formatAmount(row.original.total_amount),
+      header: "Status do pagamento",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="capitalize">
+          {statusLabel(row.original.payment_status)}
+        </Badge>
+      ),
     },
     {
-      header: "status",
-      cell: ({ row }) => {
-        const status = row.original.status;
+      header: "Detalhes",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          {hasPermission("orders", "canPrint") && (
+            <PrintInvoiceButton orderId={row.original.id} />
+          )}
 
-        return (
-          <Badge
-            variant={OrderBadgeVariants[status]}
-            className="flex-shrink-0 text-xs capitalize"
-          >
-            {status}
-          </Badge>
-        );
-      },
-    },
-    {
-      header: "invoice",
-      cell: ({ row }) => {
-        return (
-          <div className="flex items-center gap-1">
-            {hasPermission("orders", "canPrint") && (
-              <PrintInvoiceButton orderId={row.original.id} />
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-foreground"
-                  asChild
-                >
-                  <Link href={`/orders/${row.original.id}`}>
-                    <ZoomIn className="size-5" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-
-              <TooltipContent>
-                <p>View Invoice</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        );
-      },
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-foreground"
+                asChild
+              >
+                <Link href={`/orders/${row.original.id}`}>
+                  <ZoomIn className="size-5" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ver pedido</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      ),
     },
   ];
 
   if (hasPermission("orders", "canChangeStatus")) {
-    columns.splice(6, 0, {
-      header: "action",
-      cell: ({ row }) => {
-        return (
-          <TableSelect
-            value={row.original.status}
-            toastSuccessMessage="Order status updated successfully."
-            queryKey="orders"
-            onValueChange={(value) =>
-              changeOrderStatus(row.original.id, value as OrderStatus)
-            }
-          >
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </TableSelect>
-        );
-      },
+    columns.splice(5, 0, {
+      header: "Atualizar pagamento",
+      cell: ({ row }) => (
+        <TableSelect
+          value={row.original.payment_status || "pendente"}
+          toastSuccessMessage="Status do pagamento atualizado."
+          queryKey="orders"
+          onValueChange={(value) =>
+            changeOrderStatus(row.original.id, value as OrderStatus)
+          }
+        >
+          <SelectItem value="pendente">Pendente</SelectItem>
+          <SelectItem value="pago">Pago</SelectItem>
+          <SelectItem value="cancelado">Cancelado</SelectItem>
+        </TableSelect>
+      ),
     });
   }
 
@@ -134,36 +140,10 @@ export const getColumns = ({
 };
 
 export const skeletonColumns: SkeletonColumn[] = [
-  {
-    header: "invoice no",
-    cell: <Skeleton className="w-20 h-8" />,
-  },
-  {
-    header: "order time",
-    cell: <Skeleton className="w-32 h-8" />,
-  },
-  {
-    header: "customer name",
-    cell: <Skeleton className="w-32 h-8" />,
-  },
-  {
-    header: "method",
-    cell: <Skeleton className="w-14 h-8" />,
-  },
-  {
-    header: "amount",
-    cell: <Skeleton className="w-16 h-8" />,
-  },
-  {
-    header: "status",
-    cell: <Skeleton className="w-16 h-8" />,
-  },
-  {
-    header: "action",
-    cell: <Skeleton className="w-24 h-10" />,
-  },
-  {
-    header: "invoice",
-    cell: <Skeleton className="w-20 h-8" />,
-  },
+  { header: "Cliente", cell: <Skeleton className="h-8 w-32" /> },
+  { header: "Data do pedido", cell: <Skeleton className="h-8 w-28" /> },
+  { header: "Pagamento", cell: <Skeleton className="h-8 w-20" /> },
+  { header: "Total", cell: <Skeleton className="h-8 w-20" /> },
+  { header: "Status", cell: <Skeleton className="h-8 w-20" /> },
+  { header: "Detalhes", cell: <Skeleton className="h-8 w-20" /> },
 ];

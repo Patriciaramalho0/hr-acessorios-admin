@@ -1,19 +1,31 @@
-import { Database } from "@/types/supabase";
 import { Pagination } from "@/types/pagination";
 
-import { SBCustomer } from "../customers/types";
-import { SBProduct } from "../products/types";
-import { SBCoupon } from "../coupons/types";
+export type OrderStatus = string;
+export type OrderMethod = string;
 
-export type OrderStatus = Database["public"]["Enums"]["order_status_enum"];
-export type OrderMethod = Database["public"]["Enums"]["payment_method_enum"];
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  unit_price: number;
+}
 
-export type SBOrder = Database["public"]["Tables"]["orders"]["Row"];
-type SBOrderItems = Database["public"]["Tables"]["order_items"]["Row"];
+export interface SBOrder {
+  checkout?: { event?: string; note?: string; source?: string; whatsapp_consent?: boolean; whatsapp_consent_at?: string | null };
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  items: unknown;
+  total_amount: number;
+  payment_status: string | null;
+  payment_method: string | null;
+  created_at: string;
+}
 
-export type Order = SBOrder & {
-  customers: Pick<SBCustomer, "name"> | null;
-};
+export type Order = SBOrder;
+
+export interface OrderDetails extends SBOrder {
+  items: OrderItem[];
+}
 
 export interface FetchOrdersParams {
   page?: number;
@@ -30,39 +42,12 @@ export interface FetchOrdersResponse {
   pagination: Pagination;
 }
 
-export type OrderDetails = Pick<
-  SBOrder,
-  | "id"
-  | "invoice_no"
-  | "order_time"
-  | "total_amount"
-  | "shipping_cost"
-  | "payment_method"
-  | "status"
-> & {
-  customers: Pick<SBCustomer, "name" | "email" | "phone" | "address">;
-} & {
-  order_items: (Pick<SBOrderItems, "quantity" | "unit_price"> & {
-    products: Pick<SBProduct, "name">;
-  })[];
-} & {
-  coupons: Pick<SBCoupon, "discount_type" | "discount_value"> | null;
-};
-
-export type OrdersExport = Pick<
-  SBOrder,
-  | "id"
-  | "invoice_no"
-  | "order_time"
-  | "total_amount"
-  | "shipping_cost"
-  | "payment_method"
-  | "order_time"
-  | "status"
-  | "created_at"
-  | "updated_at"
-> & {
-  discount: string;
-  customer_name: SBCustomer["name"];
-  customer_email: SBCustomer["email"];
+export type OrdersExport = {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  total_amount: number;
+  payment_status: string;
+  payment_method: string;
+  created_at: string;
 };

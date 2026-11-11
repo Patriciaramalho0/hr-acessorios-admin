@@ -1,3 +1,4 @@
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -11,12 +12,8 @@ export async function editCategory(
   categoryId: string,
   formData: FormData
 ): Promise<CategoryServerActionResponse> {
-  const supabase = createServerActionClient();
-
   const parsedData = categoryFormSchema.safeParse({
     name: formData.get("name"),
-    description: formData.get("description"),
-    image: formData.get("image"),
     slug: formData.get("slug"),
   });
 
@@ -28,88 +25,40 @@ export async function editCategory(
     };
   }
 
-  const { image, ...categoryData } = parsedData.data;
+  const supabase = await createServerActionClient();
+  const db = supabase as any;
 
-  let imageUrl: string | undefined;
-
-  if (image instanceof File && image.size > 0) {
-    const { data: oldCategoryData, error: fetchError } = await supabase
-      .from("categories")
-      .select("image_url")
-      .eq("id", categoryId)
-      .single();
-
-    if (fetchError) {
-      console.error("Failed to fetch old category data:", fetchError);
-      return { dbError: "Could not find the category to update." };
-    }
-
-    const oldImageUrl = oldCategoryData.image_url;
-
-    const fileExt = image.name.split(".").pop();
-    const fileName = `categories/${categoryData.slug}-${Date.now()}.${fileExt}`;
-
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("assets")
-      .upload(fileName, image);
-
-    if (uploadError) {
-      console.error("Image upload failed:", uploadError);
-      return { validationErrors: { image: "Failed to upload image" } };
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from("assets")
-      .getPublicUrl(uploadData.path);
-
-    imageUrl = publicUrlData.publicUrl;
-
-    if (oldImageUrl) {
-      const oldImageFileName = `categories/${oldImageUrl.split("/").pop()}`;
-
-      if (oldImageFileName) {
-        await supabase.storage.from("assets").remove([oldImageFileName]);
-      }
-    }
-  }
-
-  const { data: updatedCategory, error: dbError } = await supabase
+  const { data: updatedCategory, error } = await db
     .from("categories")
     .update({
-      name: categoryData.name,
-      description: categoryData.description,
-      slug: categoryData.slug,
-      ...(imageUrl && { image_url: imageUrl }),
+      name: parsedData.data.name,
+      slug: parsedData.data.slug,
     })
     .eq("id", categoryId)
-    .select()
+    .select("*")
     .single();
 
-  if (dbError) {
-    if (dbError.code === "23505") {
-      const match = dbError.details.match(/\(([^)]+)\)/);
-      const uniqueColumn = match ? match[1] : null;
+  if (error) {
+    console.error("Erro ao editar categoria:", error);
 
-      if (uniqueColumn === "slug") {
-        return {
-          validationErrors: {
-            slug: "This category slug is already in use. Please choose a different one.",
-          },
-        };
-      } else if (uniqueColumn === "name") {
-        return {
-          validationErrors: {
-            name: "A category with this name already exists. Please enter a unique name for this category.",
-          },
-        };
-      }
+    if (error.code === "23505") {
+      return {
+        validationErrors: {
+          slug: "Já existe uma categoria com esse identificador.",
+        },
+      };
     }
 
-    console.error("Database update failed:", dbError);
-    return { dbError: "Something went wrong. Please try again later." };
+    return {
+      dbError: "Não foi possível atualizar a categoria.",
+    };
   }
 
   revalidatePath("/categories");
+  revalidatePath("/products");
 
-  return { success: true, category: updatedCategory };
+  return {
+    success: true,
+    category: updatedCategory,
+  };
 }

@@ -1,10 +1,10 @@
+
 "use client";
 
 import { SheetTrigger } from "@/components/ui/sheet";
 import { editProduct } from "@/actions/products/editProduct";
 import { ProductDetails } from "@/services/products/types";
 import ProductFormSheet from "../../_components/form/ProductFormSheet";
-
 import { useAuthorization } from "@/hooks/use-authorization";
 
 type Props = {
@@ -12,31 +12,29 @@ type Props = {
   children: React.ReactNode;
 };
 
-export async function EditProductSheet({ product, children }: Props) {
+export function EditProductSheet({ product, children }: Props) {
   const { hasPermission } = useAuthorization();
 
   if (!hasPermission("products", "canEdit")) return null;
 
   return (
     <ProductFormSheet
-      title="Update Products"
-      description="Update necessary product information here"
-      submitButtonText="Update Product"
-      actionVerb="updated"
+      title="Editar produto"
+      description="Atualize as informações do produto."
+      submitButtonText="Salvar alterações"
+      actionVerb="atualizado"
       initialData={{
         name: product.name,
-        description: product.description ?? "",
-        image: product.image_url,
-        sku: product.sku,
-        category: product.category_id,
-        costPrice: product.cost_price,
-        salesPrice: product.selling_price,
-        stock: product.stock,
-        minStockThreshold: product.min_stock_threshold,
-        slug: product.slug,
+        image: product.image_url ?? undefined,
+        category: product.category_id ?? "",
+        price: product.price,
+        oldPrice: product.old_price ?? 0,
+        stock: product.stock ?? 0,
       }}
-      action={(formData) => editProduct(product.id, formData)}
-      previewImage={product.image_url}
+      action={(formData: FormData) =>
+        editProduct(product.id, formData)
+      }
+      previewImage={product.image_url ?? ""}
     >
       <SheetTrigger asChild>{children}</SheetTrigger>
     </ProductFormSheet>

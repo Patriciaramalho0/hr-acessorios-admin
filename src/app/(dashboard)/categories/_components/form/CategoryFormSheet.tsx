@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FieldErrors } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,38 +21,27 @@ import {
   FormSheetHeader,
   FormSheetFooter,
 } from "@/components/shared/form/FormSheet";
+
 import {
   FormTextInput,
-  FormImageInput,
   FormSlugInput,
-  FormTextarea,
 } from "@/components/shared/form";
+
 import { FormSubmitButton } from "@/components/shared/form/FormSubmitButton";
 
 import { categoryFormSchema, CategoryFormData } from "./schema";
 import { objectToFormData } from "@/helpers/objectToFormData";
 import { CategoryServerActionResponse } from "@/types/server-action";
 
-type BaseCategoryFormProps = {
+type Props = {
   title: string;
   description: string;
   submitButtonText: string;
   actionVerb: string;
   children: React.ReactNode;
   action: (formData: FormData) => Promise<CategoryServerActionResponse>;
+  initialData?: Partial<CategoryFormData>;
 };
-
-type AddCategoryFormProps = BaseCategoryFormProps & {
-  initialData?: never;
-  previewImage?: never;
-};
-
-type EditCategoryFormProps = BaseCategoryFormProps & {
-  initialData: Partial<CategoryFormData>;
-  previewImage: string;
-};
-
-type CategoryFormProps = AddCategoryFormProps | EditCategoryFormProps;
 
 export default function CategoryFormSheet({
   title,
@@ -59,63 +49,77 @@ export default function CategoryFormSheet({
   submitButtonText,
   actionVerb,
   initialData,
-  previewImage,
   children,
   action,
-}: CategoryFormProps) {
+}: Props) {
   const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const imageDropzoneRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: "",
-      description: "",
-      image: undefined,
       slug: "",
       ...initialData,
     },
   });
 
   useEffect(() => {
-    form.reset(initialData);
-  }, [form, initialData]);
+    if (isSheetOpen) {
+      form.reset({
+        name: "",
+        slug: "",
+        ...initialData,
+      });
+    }
+  }, [isSheetOpen, initialData, form]);
 
   const onSubmit = (data: CategoryFormData) => {
     const formData = objectToFormData(data);
 
     startTransition(async () => {
-      const result = await action(formData);
+      try {
+        const result = await action(formData);
 
-      if ("validationErrors" in result) {
-        Object.keys(result.validationErrors).forEach((key) => {
-          form.setError(key as keyof CategoryFormData, {
-            message: result.validationErrors![key],
+        if ("validationErrors" in result) {
+          const errors = result.validationErrors ?? {};
+
+          Object.keys(errors).forEach((key) => {
+            form.setError(key as keyof CategoryFormData, {
+              message: errors[key],
+            });
           });
-        });
 
-        form.setFocus(
-          Object.keys(result.validationErrors)[0] as keyof CategoryFormData
-        );
-      } else if ("dbError" in result) {
-        toast.error(result.dbError);
-      } else {
+          const firstError = Object.keys(errors)[0];
+
+          if (firstError) {
+            form.setFocus(firstError as keyof CategoryFormData);
+          }
+
+          return;
+        }
+
+        if ("dbError" in result) {
+          toast.error(result.dbError);
+          return;
+        }
+
         form.reset();
-        toast.success(
-          `Category "${result.category.name}" ${actionVerb} successfully!`,
-          { position: "top-center" }
-        );
-        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        toast.success(`Categoria ${actionVerb} com sucesso!`);
+        await queryClient.invalidateQueries({ queryKey: ["categories"] });
         setIsSheetOpen(false);
+      } catch (error) {
+        console.error(error);
+        toast.error("Não foi possível salvar a categoria.");
       }
     });
   };
 
   const onInvalid = (errors: FieldErrors<CategoryFormData>) => {
-    if (errors.image) {
-      imageDropzoneRef.current?.focus();
+    const firstError = Object.keys(errors)[0];
+    if (firstError) {
+      form.setFocus(firstError as keyof CategoryFormData);
     }
   };
 
@@ -142,31 +146,16 @@ export default function CategoryFormSheet({
                   <FormTextInput
                     control={form.control}
                     name="name"
-                    label="Category Name"
-                    placeholder="Category Name / Title"
-                  />
-
-                  <FormTextarea
-                    control={form.control}
-                    name="description"
-                    label="Category Description"
-                    placeholder="Category Description"
-                  />
-
-                  <FormImageInput
-                    control={form.control}
-                    name="image"
-                    label="Category Image"
-                    previewImage={previewImage}
-                    ref={imageDropzoneRef}
+                    label="Nome da categoria"
+                    placeholder="Ex.: Colares"
                   />
 
                   <FormSlugInput
                     form={form}
                     control={form.control}
                     name="slug"
-                    label="Category Slug"
-                    placeholder="Category Slug"
+                    label="Identificador da categoria"
+                    placeholder="Ex.: colares"
                     generateSlugFrom="name"
                   />
                 </div>

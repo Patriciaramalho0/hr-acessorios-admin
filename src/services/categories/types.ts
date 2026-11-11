@@ -1,7 +1,13 @@
-import { Database } from "@/types/supabase";
+
 import { Pagination } from "@/types/pagination";
 
-export type SBCategory = Database["public"]["Tables"]["categories"]["Row"];
+export type SBCategory = {
+  published: boolean;
+  id: string;
+  name: string;
+  slug: string | null;
+  created_at: string | null;
+};
 
 export type Category = SBCategory;
 

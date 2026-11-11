@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
 import { useQuery } from "@tanstack/react-query";
-
 import { cn } from "@/lib/utils";
 import Typography from "@/components/ui/typography";
 import { fetchNotificationsCount } from "@/services/notifications";
@@ -13,8 +12,10 @@ const NotificationsBadge = ({ staffId }: { staffId: string }) => {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["notifications", "notifications-count"],
-    queryFn: () => fetchNotificationsCount(createBrowserClient(), { staffId }),
+    queryKey: ["notifications", "notifications-count", staffId],
+    queryFn: () =>
+      fetchNotificationsCount(createBrowserClient(), { staffId }),
+    enabled: Boolean(staffId),
   });
 
   if (isLoading || isError || !notificationCount) return null;
@@ -28,14 +29,8 @@ const NotificationsBadge = ({ staffId }: { staffId: string }) => {
           : "left-[8%] top-[4%] size-5"
       )}
     >
-      <Typography className="text-[0.5rem] md:text-[0.5rem] mt-0.5">
-        {notificationCount < 100 ? (
-          notificationCount
-        ) : (
-          <>
-            99<sup>+</sup>
-          </>
-        )}
+      <Typography className="text-[0.5rem] mt-0.5">
+        {notificationCount < 100 ? notificationCount : <>99<sup>+</sup></>}
       </Typography>
     </div>
   );

@@ -1,3 +1,4 @@
+
 import { PenSquare, Trash2 } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -31,13 +32,13 @@ export const getColumns = ({
       header: "campaign name",
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
-          <ImagePlaceholder
+          {row.original.image_url && <ImagePlaceholder
             src={row.original.image_url}
             alt={row.original.campaign_name}
             width={32}
             height={32}
             className="size-8 rounded-full"
-          />
+          />}
 
           <Typography className="capitalize block truncate">
             {row.original.campaign_name}
@@ -153,7 +154,7 @@ export const getColumns = ({
                 initialData={{
                   name: row.original.campaign_name,
                   code: row.original.code,
-                  image: row.original.image_url,
+                  image: row.original.image_url ?? undefined,
                   startDate: new Date(row.original.start_date),
                   endDate: new Date(row.original.end_date),
                   isPercentageDiscount:
@@ -161,7 +162,7 @@ export const getColumns = ({
                   discountValue: row.original.discount_value,
                 }}
                 action={(formData) => editCoupon(row.original.id, formData)}
-                previewImage={row.original.image_url}
+                previewImage={row.original.image_url ?? undefined}
               >
                 <SheetTooltip content="Edit Coupon">
                   <PenSquare className="size-5" />

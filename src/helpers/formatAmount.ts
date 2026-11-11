@@ -1,16 +1,18 @@
 /**
- * Format the input amount string into a currency format (USD).
- * @param  amount - The amount to be formatted as a string.
- * @returns The formatted amount in USD currency format.
+ * Formata valores monetários em Real brasileiro (BRL).
+ * @param amount - Valor a ser formatado.
+ * @returns Valor formatado em R$.
  */
 export const formatAmount = (amount: string | number): string => {
   const amountInNumber =
-    typeof amount === "string" ? parseFloat(amount) : amount;
+    typeof amount === "string" ? Number(amount) : amount;
 
-  const formatted = new Intl.NumberFormat("en-US", {
+  if (!Number.isFinite(amountInNumber)) {
+    return "R$ 0,00";
+  }
+
+  return new Intl.NumberFormat("pt-BR", {
     style: "currency",
-    currency: "USD",
+    currency: "BRL",
   }).format(amountInNumber);
-
-  return formatted;
 };

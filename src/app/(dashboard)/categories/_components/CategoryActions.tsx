@@ -1,6 +1,7 @@
+
 "use client";
 
-import { PenSquare, Trash2, Plus } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,11 +10,9 @@ import { ActionAlertDialog } from "@/components/shared/ActionAlertDialog";
 import { ExportDataButtons } from "@/components/shared/ExportDataButtons";
 
 import CategoryFormSheet from "./form/CategoryFormSheet";
-import CategoryBulkActionSheet from "./form/CategoryBulkActionSheet";
 import { addCategory } from "@/actions/categories/addCategory";
 import { deleteCategories } from "@/actions/categories/deleteCategories";
 import { exportCategories } from "@/actions/categories/exportCategories";
-import { editCategories } from "@/actions/categories/editCategories";
 import { RowSelectionProps } from "@/types/data-table";
 import { useAuthorization } from "@/hooks/use-authorization";
 
@@ -22,82 +21,57 @@ export default function CategoryActions({
   setRowSelection,
 }: RowSelectionProps) {
   const { hasPermission } = useAuthorization();
+  const selectedIds = Object.keys(rowSelection);
 
   return (
     <Card className="mb-5">
-      <form className="flex flex-col xl:flex-row xl:justify-between gap-4">
-        <ExportDataButtons action={exportCategories} tableName="categories" />
+      <div className="flex flex-col gap-4 xl:flex-row xl:justify-between">
+        <ExportDataButtons
+          action={exportCategories}
+          tableName="categories"
+        />
 
-        {(hasPermission("categories", "canEdit") ||
-          hasPermission("categories", "canDelete") ||
-          hasPermission("categories", "canCreate")) && (
-          <div className="flex flex-col sm:flex-row gap-4">
-            {hasPermission("categories", "canEdit") && (
-              <CategoryBulkActionSheet
-                action={(formData) =>
-                  editCategories(Object.keys(rowSelection), formData)
-                }
-                onSuccess={() => setRowSelection({})}
+        <div className="flex flex-col gap-4 sm:flex-row">
+          {hasPermission("categories", "canDelete") && (
+            <ActionAlertDialog
+              title={`Excluir ${selectedIds.length} categorias?`}
+              description="Categorias com produtos vinculados não poderão ser excluídas."
+              actionButtonText="Excluir categorias"
+              toastSuccessMessage="Categorias excluídas com sucesso."
+              queryKey="categories"
+              action={() => deleteCategories(selectedIds)}
+              onSuccess={() => setRowSelection({})}
+            >
+              <Button
+                variant="destructive"
+                size="lg"
+                type="button"
+                disabled={selectedIds.length === 0}
               >
-                <SheetTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    type="button"
-                    disabled={!Boolean(Object.keys(rowSelection).length)}
-                    className="sm:flex-grow xl:flex-grow-0 transition-opacity duration-300"
-                  >
-                    <PenSquare className="mr-2 size-4" /> Bulk Action
-                  </Button>
-                </SheetTrigger>
-              </CategoryBulkActionSheet>
-            )}
+                <Trash2 className="mr-2 size-4" />
+                Excluir selecionadas
+              </Button>
+            </ActionAlertDialog>
+          )}
 
-            {hasPermission("categories", "canDelete") && (
-              <ActionAlertDialog
-                title={`Delete ${Object.keys(rowSelection).length} categories?`}
-                description="This action cannot be undone. This will permanently delete the categories and their associated data from the database."
-                actionButtonText="Delete Categories"
-                toastSuccessMessage="Categories deleted successfully"
-                queryKey="categories"
-                action={() => deleteCategories(Object.keys(rowSelection))}
-                onSuccess={() => setRowSelection({})}
-              >
-                <Button
-                  variant="destructive"
-                  size="lg"
-                  type="button"
-                  disabled={!Boolean(Object.keys(rowSelection).length)}
-                  className="sm:flex-grow xl:flex-grow-0 transition-opacity duration-300"
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  Delete
+          {hasPermission("categories", "canCreate") && (
+            <CategoryFormSheet
+              title="Nova categoria"
+              description="Cadastre uma nova categoria para seus produtos."
+              submitButtonText="Cadastrar categoria"
+              actionVerb="cadastrada"
+              action={addCategory}
+            >
+              <SheetTrigger asChild>
+                <Button variant="default" size="lg">
+                  <Plus className="mr-2 size-4" />
+                  Nova categoria
                 </Button>
-              </ActionAlertDialog>
-            )}
-
-            {hasPermission("categories", "canCreate") && (
-              <CategoryFormSheet
-                title="Add Category"
-                description="Add product category and necessary information here"
-                submitButtonText="Add Category"
-                actionVerb="added"
-                action={addCategory}
-              >
-                <SheetTrigger asChild>
-                  <Button
-                    variant="default"
-                    size="lg"
-                    className="sm:flex-grow xl:flex-grow-0"
-                  >
-                    <Plus className="mr-2 size-4" /> Add Category
-                  </Button>
-                </SheetTrigger>
-              </CategoryFormSheet>
-            )}
-          </div>
-        )}
-      </form>
+              </SheetTrigger>
+            </CategoryFormSheet>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }

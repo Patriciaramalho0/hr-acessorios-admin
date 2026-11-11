@@ -1,3 +1,4 @@
+import { isAdminUser } from "@/lib/supabase/admin";
 import { User } from "@supabase/auth-helpers-nextjs";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -12,10 +13,11 @@ export async function getUser(): Promise<User | null> {
     // Call Supabase's getUser() method to retrieve user data.
     const {
       data: { user },
+      error,
     } = await supabase.auth.getUser();
 
     // Return the user data obtained from Supabase.
-    return user;
+    return !error && isAdminUser(user) ? user : null;
   } catch (error) {
     console.warn("Aviso: Falha ao ler a sessão do utilizador:", error);
     return null;
