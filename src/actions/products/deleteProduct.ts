@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 
@@ -21,21 +21,7 @@ export async function deleteProduct(
     return { dbError: "Could not find the product to delete." };
   }
 
-  const imageUrl = productData?.image_url;
-
-  if (imageUrl) {
-    const imageFileName = `products/${imageUrl.split("/").pop()}`;
-
-    if (imageFileName) {
-      const { error: storageError } = await supabase.storage
-        .from("products")
-        .remove([imageFileName]);
-
-      if (storageError) {
-        console.error("Failed to delete product image:", storageError);
-      }
-    }
-  }
+  // Preservar arquivos: a exclusão do registro pode falhar e a imagem pode ser compartilhada.
 
   const { error: dbError } = await supabase
     .from("products")

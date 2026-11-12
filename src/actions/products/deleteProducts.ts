@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { createServerActionClient } from "@/lib/supabase/server-action";
@@ -21,18 +21,7 @@ export async function deleteProducts(
     return { dbError: "Não foi possível localizar os produtos." };
   }
 
-  const imageFileNames = (data ?? [])
-    .map((product) => product.image_url)
-    .filter((url): url is string => Boolean(url))
-    .map((url) => `products/${url.split("/").pop()}`);
-
-  if (imageFileNames.length) {
-    const { error } = await supabase.storage
-      .from("products")
-      .remove(imageFileNames);
-
-    if (error) console.error("Failed to delete product images:", error);
-  }
+  // Preservar arquivos: a exclusão do registro pode falhar e a imagem pode ser compartilhada.
 
   const { error } = await supabase
     .from("products")

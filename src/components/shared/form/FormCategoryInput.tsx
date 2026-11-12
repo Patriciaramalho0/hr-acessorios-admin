@@ -63,7 +63,7 @@ const FormCategoryInput = forwardRef(function FormCategoryInputRender<
             >
               <FormControl>
                 <SelectTrigger ref={ref} className="md:basis-1/5">
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
               </FormControl>
 
@@ -71,12 +71,8 @@ const FormCategoryInput = forwardRef(function FormCategoryInputRender<
                 <FetchDropdownContainer
                   isLoading={isLoading}
                   isError={isError}
-                  errorMessage="Failed to load categories"
+                  errorMessage="Não foi possível carregar as categorias"
                 >
-                  <SelectItem key="all" value="all">
-                    All Categories
-                  </SelectItem>
-
                   {!isLoading &&
                     !isError &&
                     categories &&
